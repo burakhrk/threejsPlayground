@@ -3,18 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Textile Showroom</title>
+    <title>Textile Showroom - Select</title>
     <style>
-        body { margin: 0; overflow: hidden; /* Prevent scrollbars */ }
-        canvas { display: block; }
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent body scrollbars */
+            font-family: sans-serif;
+            background-color: #f0f0f0; /* Background for the page */
+        }
+
+        /* Carousel Styles */
+        #carousel-container {
+            position: fixed; /* Take up full screen */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #e0e0e0, #ffffff); /* Subtle gradient background */
+            display: flex;
+            flex-direction: column; /* Stack title and slider */
+            justify-content: center;
+            align-items: center;
+            z-index: 10; /* Make sure it's above the (initially hidden) 3D view */
+            opacity: 1;
+            transition: opacity 0.5s ease-out; /* Fade out transition */
+        }
+
+        #carousel-container.hidden {
+            opacity: 0;
+            pointer-events: none; /* Prevent interaction when hidden */
+        }
+
+        #carousel-title {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #slider-viewport {
+            width: 80%; /* Adjust width as needed */
+            max-width: 1000px; /* Max width for larger screens */
+            overflow: hidden; /* Crucial: Hides non-visible cards */
+            position: relative; /* For positioning arrows */
+        }
+
+        #card-slider {
+            display: flex;
+            /* Width calculation: (Number of cards) * 100% */
+            width: 300%; /* For 3 cards */
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth slide */
+        }
+
+        .card {
+            flex: 0 0 calc(100% / 3); /* Each card takes 1/3rd of the slider width */
+            box-sizing: border-box; /* Include padding in width calculation */
+            padding: 20px;
+            margin: 0 10px; /* Spacing between cards */
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card img {
+            width: 80%;
+            max-width: 200px; /* Limit image size */
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            object-fit: cover; /* Ensure image covers space nicely */
+            aspect-ratio: 1 / 1; /* Make images square */
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .card p {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 20px;
+            flex-grow: 1; /* Push button to bottom */
+        }
+
+        .enter-button {
+            padding: 10px 25px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .enter-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Navigation Arrows */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 15;
+            line-height: 40px; /* Center symbol vertically */
+            text-align: center;
+        }
+        .nav-arrow:hover {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .nav-arrow:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        #prev-btn { left: -20px; }
+        #next-btn { right: -20px; }
+
+
+        /* 3D Showroom Container Styles (Initially Hidden) */
+        #showroom-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Hidden by default */
+        }
+
+        #showroom-container.visible {
+            display: block; /* Show when activated */
+        }
+
+        /* Styles for blocker/instructions (from previous setup) */
         #blocker {
             position: absolute;
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.5);
-            display: flex; /* Use flexbox for centering */
+            /* display: flex; Initially hidden via #showroom-container */
             justify-content: center;
             align-items: center;
+            z-index: 5; /* Above canvas, below carousel */
         }
         #instructions {
             width: 50%;
@@ -28,22 +173,60 @@
             font-size: 1.2em;
             color: #333;
         }
+        canvas { display: block; }
+
     </style>
 </head>
 <body>
-    <div id="blocker">
-        <div id="instructions">
-            Click to Explore Showroom<br>(Use WASD keys to move, Mouse to look)
+
+    <!-- Card Carousel UI -->
+    <div id="carousel-container">
+        <h2 id="carousel-title">Select a Showroom</h2>
+        <div id="slider-viewport">
+            <div id="card-slider">
+                <!-- Card 1 -->
+                <div class="card">
+                    <img src="textures/placeholder_towel.jpg" alt="Towels"> <!-- Placeholder path -->
+                    <h3>Towels Collection</h3>
+                    <p>Explore our premium range of soft and absorbent towels.</p>
+                    <button class="enter-button" data-scene-id="towels">Enter</button>
+                </div>
+                <!-- Card 2 -->
+                <div class="card">
+                     <img src="textures/placeholder_bathrobe.jpg" alt="Bathrobes"> <!-- Placeholder path -->
+                    <h3>Luxury Bathrobes</h3>
+                    <p>Discover comfort and style with our elegant bathrobes.</p>
+                    <button class="enter-button" data-scene-id="bathrobes">Enter</button>
+                </div>
+                <!-- Card 3 -->
+                <div class="card">
+                     <img src="textures/placeholder_other.jpg" alt="Accessories"> <!-- Placeholder path -->
+                    <h3>Bath Accessories</h3>
+                    <p>Complete your bathroom with our curated accessories.</p>
+                    <button class="enter-button" data-scene-id="accessories">Enter</button>
+                </div>
+            </div>
+             <!-- Navigation Arrows -->
+            <button id="prev-btn" class="nav-arrow" disabled><</button>
+            <button id="next-btn" class="nav-arrow">></button>
         </div>
     </div>
-    <!-- Switched to UNPKG CDN -->
-    <!-- 1. Load Three.js Core FIRST -->
+
+    <!-- 3D Showroom Container (Initially Hidden) -->
+    <div id="showroom-container">
+        <!-- Canvas will be added here by Three.js -->
+         <div id="blocker"> <!-- Blocker now inside showroom container -->
+            <div id="instructions">
+                Click to Explore<br>(WASD to move, Mouse to look)
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-
-    <!-- 2. Load Controls that DEPEND on THREE (from same source/version) -->
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-
-    <!-- 3. Load Your Code that DEPENDS on THREE -->
+    <!-- Main script -->
     <script src="showroom.js"></script>
+
 </body>
 </html>
