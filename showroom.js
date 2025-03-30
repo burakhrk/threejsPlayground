@@ -38,30 +38,107 @@ const instructions = document.getElementById('instructions');
 const controls = new THREE.PointerLockControls(camera, renderer.domElement);
 
 instructions.addEventListener('click', () => {
-    console.log("Instructions clicked! Attempting to lock controls...");
+    console.log("Instructions clicked! Preparing to lock controls...");
     try {
-        // Force reset camera position and lookAt on lock
-        const camObject = controls.getObject();
-        camObject.position.set(0, 1.6, 5); // Place it slightly further back
-        // Make it look towards the origin (where the box should be)
-        camObject.lookAt(0, 0, 0);
-        console.log("Camera position FORCED to (0, 1.6, 5), looking at origin.");
+        // --- Attempt 1: Update Matrix ---
+        camera.updateMatrixWorld(); // Explicitly update camera matrices
+        console.log("Called camera.updateMatrixWorld()");
         // ---
 
-        controls.lock(); // Lock AFTER setting position
-        console.log("controls.lock() called.");
+        // Log camera state BEFORE locking
+        const preLockPosition = controls.getObject().position; // Use controls.getObject() as it's the one being controlled
+        const preLockDirection = new THREE.Vector3();
+        controls.getObject().getWorldDirection(preLockDirection); // Get direction from the controlled object
+        console.log(`Camera state BEFORE lock: Pos=(${preLockPosition.x.toFixed(2)}, ${preLockPosition.y.toFixed(2)}, ${preLockPosition.z.toFixed(2)}), Dir=(${preLockDirection.x.toFixed(2)}, ${preLockDirection.y.toFixed(2)}, ${preLockDirection.z.toFixed(2)})`);
+        if (isNaN(preLockPosition.x) || isNaN(preLockPosition.y) || isNaN(preLockPosition.z)) {
+             console.error("!!! NaN DETECTED BEFORE LOCK !!!");
+        }
+        // ---
 
-        // Log state again AFTER lock and potential changes by controls.lock()
-        const currentPosition = controls.getObject().position;
-        const direction = new THREE.Vector3();
-        camera.getWorldDirection(direction);
-        console.log(`Camera state right after lock: Pos=(${currentPosition.x.toFixed(2)}, ${currentPosition.y.toFixed(2)}, ${currentPosition.z.toFixed(2)}), Dir=(${direction.x.toFixed(2)}, ${direction.y.toFixed(2)}, ${direction.z.toFixed(2)})`);
+        // --- Attempt 2: Slight Delay (Use this if Attempt 1 doesn't work alone) ---
+        // Comment out the direct call below if using the delay:
+        // controls.lock();
+        // console.log("controls.lock() called directly.");
+
+        // UNCOMMENT BELOW TO TRY DELAY:
+        setTimeout(() => {
+            console.log("Attempting lock after short delay...");
+            controls.lock();
+            console.log("controls.lock() called after delay.");
+            logStateAfterLock(); // Call the logging function after delayed lock
+        }, 50); // 50 millisecond delay - adjust if needed
+        // --- END OF DELAY BLOCK ---
+
+
+        // Log state again AFTER lock (if using direct call)
+        // If using the delay, this logging will happen *before* the lock.
+        // We'll move the post-lock logging into a separate function called by both paths.
+        // logStateAfterLock(); // Moved call
+
 
     } catch (e) {
-        console.error("Error calling controls.lock():", e);
+        console.error("Error during click/lock process:", e);
     }
 });
 
+// Helper function to log state after lock attempt
+function logStateAfterLock() {
+    // Use setTimeout to check state slightly after lock call completes
+    setTimeout(() => {
+        const postLockPosition = controls.getObject().position;
+        const postLockDirection = new THREE.Vector3();
+        controls.getObject().getWorldDirection(postLockDirection);
+        console.log(`Camera state AFTER lock attempt (timeout): Pos=(${postLockPosition.x.toFixed(2)}, ${postLockPosition.y.toFixed(2)}, ${postLockPosition.z.toFixed(2)}), Dir=(${postLockDirection.x.toFixed(2)}, ${postLockDirection.y.toFixed(2)}, ${postLockDirection.z.toFixed(2)})`);
+
+        // Add specific NaN checks
+        if (isNaN(postLockPosition.x) || isNaN(postLockPosition.y) || isNaN(postLockPosition.z)) {
+            console.error("!!! Camera position contains NaN after lock !!!");
+        } else {
+            console.log("Camera position seems valid after lock."); // Confirmation
+        }
+    }, 0); // Check immediately after current event loop tick
+}
+
+// --- Animation Loop ---
+// Keep the animation loop with the try...catch and NaN checks as before
+const clock = new THREE.Clock();
+let frameCount = 0;
+
+function animate() {
+    requestAnimationFrame(animate);
+    frameCount++;
+
+    const camPosLog = controls.getObject().position;
+    if (isNaN(camPosLog.x) || isNaN(camPosLog.y) || isNaN(camPosLog.z)) {
+         console.error(`!!! NaN DETECTED IN ANIMATE LOOP (Frame ${frameCount}) !!! Pos:`, camPosLog);
+         return; // Stop animation loop if NaN detected to prevent spam/further issues
+    } else if (frameCount % 120 === 0) {
+        // console.log(`Animate loop running, Frame: ${frameCount}, Camera Pos:`, camPosLog); // Reduce logging noise
+    }
+
+    try {
+        const delta = clock.getDelta();
+        if (controls.isLocked === true) {
+            // --- Handle Movement ---
+            const moveDirection = { /* ... movement calculation ... */ };
+            const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
+            const moveDistanceRight = moveDirection.right * moveSpeed * delta;
+            if (moveDistanceForward !== 0) controls.moveForward(moveDistanceForward);
+            if (moveDistanceRight !== 0) controls.moveRight(moveDistanceRight);
+            controls.getObject().position.y = 1.6; // Floor constraint
+            const camPos = controls.getObject().position; // Boundary checks...
+            const padding = 1.0;
+            camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
+            camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
+        }
+        // --- Rendering ---
+        renderer.render(scene, camera);
+    } catch (error) {
+        console.error("Error in animate loop:", error);
+    }
+}
+
+// ... (rest of the code)
 controls.addEventListener('lock', () => {
     instructions.style.display = 'none';
     blocker.style.display = 'none';
