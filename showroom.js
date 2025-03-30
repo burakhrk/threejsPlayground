@@ -8,10 +8,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // --- SET INITIAL CAMERA POSITION AND ORIENTATION ---
 // Place the camera at a known reasonable spot
 camera.position.set(0, 1.6, 5); // x=0, y=eye height, z=5 units back from center
-
 // Make the camera look towards the center of the scene (origin)
 camera.lookAt(0, 0, 0); // Look at point (0,0,0)
-
 // IMPORTANT: Update the camera's matrices after setting position/lookAt
 camera.updateMatrixWorld();
 console.log("Initial Camera Position Set:", camera.position);
@@ -91,13 +89,14 @@ testBox.receiveShadow = true;
 scene.add(testBox);
 console.log("Test box added at:", testBox.position);
 
-// --- Animation Loop (Simplified - No NaN checks for now) ---
+// --- Animation Loop ---
+// *** ENSURE clock is declared ONLY HERE ***
 const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
 
-    const delta = clock.getDelta();
+    const delta = clock.getDelta(); // Use the single declared clock
 
     // --- Handle Movement (Basic) ---
     if (controls.isLocked === true) {
@@ -112,12 +111,6 @@ function animate() {
 
         // Simple floor constraint - USE controls.getObject()
         controls.getObject().position.y = Math.max(0.5, controls.getObject().position.y); // Prevent going below floor slightly
-
-        // Basic boundary checks - Optional for now
-        // const camPos = controls.getObject().position;
-        // const padding = 1.0;
-        // camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
-        // camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
     }
 
     // --- Rendering ---
