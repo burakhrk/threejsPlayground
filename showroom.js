@@ -203,44 +203,67 @@ scene.add(drapedTowel);
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
+let frameCount = 0; // Add a frame counter for debugging
 
 function animate() {
+    // Request the next frame FIRST (important pattern)
     requestAnimationFrame(animate);
 
-    const delta = clock.getDelta();
-
-    // --- Handle Movement ---
-    if (controls.isLocked === true) {
-        // Calculate movement direction based on keys pressed *this frame*
-        const moveDirection = {
-            forward: Number(keyStates['KeyW'] || keyStates['ArrowUp']) - Number(keyStates['KeyS'] || keyStates['ArrowDown']),
-            right: Number(keyStates['KeyD'] || keyStates['ArrowRight']) - Number(keyStates['KeyA'] || keyStates['ArrowLeft'])
-        };
-
-        // Calculate distance to move this frame
-        const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
-        const moveDistanceRight = moveDirection.right * moveSpeed * delta;
-
-        // Apply movement using PointerLockControls methods
-        if (moveDistanceForward !== 0) {
-            controls.moveForward(moveDistanceForward);
+    // --- Start Debugging Block ---
+    frameCount++;
+    if (frameCount % 60 === 0) { // Log every 60 frames (approx once per second)
+        console.log(`Animate loop running, Frame: ${frameCount}, Camera Pos:`, camera.position);
+        if (!controls.isLocked) {
+            console.log("Controls are NOT locked.");
         }
-        if (moveDistanceRight !== 0) {
-            controls.moveRight(moveDistanceRight);
-        }
-
-        // Simple floor constraint: Reset Y position after movement
-        controls.getObject().position.y = 1.6;
-
-        // Prevent moving outside the basic room boundaries
-        const camPos = controls.getObject().position;
-        const padding = 1.0; // How close to the wall you can get
-        camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
-        camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
     }
+    // --- End Debugging Block ---
 
-    // --- Rendering ---
-    renderer.render(scene, camera);
+    try { // Wrap the main logic in a try...catch
+        const delta = clock.getDelta();
+
+        // --- Handle Movement ---
+        if (controls.isLocked === true) {
+            // Calculate movement direction based on keys pressed *this frame*
+            const moveDirection = {
+                forward: Number(keyStates['KeyW'] || keyStates['ArrowUp']) - Number(keyStates['KeyS'] || keyStates['ArrowDown']),
+                right: Number(keyStates['KeyD'] || keyStates['ArrowRight']) - Number(keyStates['KeyA'] || keyStates['ArrowLeft'])
+            };
+
+            // Calculate distance to move this frame
+            const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
+            const moveDistanceRight = moveDirection.right * moveSpeed * delta;
+
+            // Apply movement using PointerLockControls methods
+            if (moveDistanceForward !== 0) {
+                controls.moveForward(moveDistanceForward);
+            }
+            if (moveDistanceRight !== 0) {
+                controls.moveRight(moveDistanceRight);
+            }
+
+            // Simple floor constraint: Reset Y position after movement
+            controls.getObject().position.y = 1.6;
+
+            // Prevent moving outside the basic room boundaries
+            const camPos = controls.getObject().position;
+            const padding = 1.0; // How close to the wall you can get
+            camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
+            camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
+        } else {
+             // Optional: log if controls are locked or not when debugging movement issues
+             // if (frameCount % 60 === 0) console.log("Controls not locked, skipping movement update.");
+        }
+
+        // --- Rendering ---
+        renderer.render(scene, camera);
+
+    } catch (error) {
+        console.error("Error in animate loop:", error);
+        // Optional: Stop the loop if a critical error occurs?
+        // (Be careful with this, might hide the cause)
+        // cancelAnimationFrame(animate); // Uncomment cautiously
+    }
 }
 
 // --- Handle Window Resize ---
@@ -251,6 +274,7 @@ window.addEventListener('resize', () => {
 }, false);
 
 // --- Start the Loop ---
+console.log("Starting animation loop..."); // Confirm loop start
 animate();
 
 console.log("Showroom script loaded. Ensure 'textures' folder and image files exist.");
