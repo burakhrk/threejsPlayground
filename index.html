@@ -36,8 +36,14 @@
             Click to Explore Showroom<br>(Use WASD keys to move, Mouse to look)
         </div>
     </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.128.0/three.min.js"></script>
+    <!-- Switched to UNPKG CDN -->
+    <!-- 1. Load Three.js Core FIRST -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+
+    <!-- 2. Load Controls that DEPEND on THREE (from same source/version) -->
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+    <!-- 3. Load Your Code that DEPENDS on THREE -->
     <script src="showroom.js"></script>
 </body>
 </html>
