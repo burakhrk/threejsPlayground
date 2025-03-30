@@ -38,7 +38,28 @@ const instructions = document.getElementById('instructions');
 const controls = new THREE.PointerLockControls(camera, renderer.domElement);
 
 instructions.addEventListener('click', () => {
-    controls.lock();
+    console.log("Instructions clicked! Attempting to lock controls...");
+    try {
+        // Force reset camera position and lookAt on lock
+        const camObject = controls.getObject();
+        camObject.position.set(0, 1.6, 5); // Place it slightly further back
+        // Make it look towards the origin (where the box should be)
+        camObject.lookAt(0, 0, 0);
+        console.log("Camera position FORCED to (0, 1.6, 5), looking at origin.");
+        // ---
+
+        controls.lock(); // Lock AFTER setting position
+        console.log("controls.lock() called.");
+
+        // Log state again AFTER lock and potential changes by controls.lock()
+        const currentPosition = controls.getObject().position;
+        const direction = new THREE.Vector3();
+        camera.getWorldDirection(direction);
+        console.log(`Camera state right after lock: Pos=(${currentPosition.x.toFixed(2)}, ${currentPosition.y.toFixed(2)}, ${currentPosition.z.toFixed(2)}), Dir=(${direction.x.toFixed(2)}, ${direction.y.toFixed(2)}, ${direction.z.toFixed(2)})`);
+
+    } catch (e) {
+        console.error("Error calling controls.lock():", e);
+    }
 });
 
 controls.addEventListener('lock', () => {
