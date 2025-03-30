@@ -1,7 +1,6 @@
 // --- Basic Setup ---
 const scene = new THREE.Scene();
-// Change background to a slightly darker tone, ceiling will cover most anyway
-scene.background = new THREE.Color(0xcccccc);
+scene.background = new THREE.Color(0xcccccc); // Room background/fog color
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.y = 1.6; // Simulate average eye height
@@ -10,18 +9,19 @@ camera.position.z = 2; // Start slightly back from the center
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+renderer.outputEncoding = THREE.sRGBEncoding; // Correct color output
 document.body.appendChild(renderer.domElement);
 
 // --- Lighting ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // White light, moderate intensity
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(10, 15, 10);
+directionalLight.position.set(10, 15, 10); // Position the light source
 directionalLight.castShadow = true;
-directionalLight.shadow.mapSize.width = 2048;
+// Configure shadow properties
+directionalLight.shadow.mapSize.width = 2048; // Higher resolution shadows
 directionalLight.shadow.mapSize.height = 2048;
 directionalLight.shadow.camera.near = 0.5;
 directionalLight.shadow.camera.far = 50;
@@ -30,7 +30,7 @@ directionalLight.shadow.camera.right = 15;
 directionalLight.shadow.camera.top = 15;
 directionalLight.shadow.camera.bottom = -15;
 scene.add(directionalLight);
-scene.add(directionalLight.target);
+scene.add(directionalLight.target); // Important for directing the light
 
 // --- Controls (Pointer Lock for Mouse Look) ---
 const blocker = document.getElementById('blocker');
@@ -47,16 +47,17 @@ controls.addEventListener('lock', () => {
 });
 
 controls.addEventListener('unlock', () => {
-    blocker.style.display = 'flex';
+    blocker.style.display = 'flex'; // Use flex again
     instructions.style.display = '';
 });
 
-scene.add(controls.getObject());
+scene.add(controls.getObject()); // Add the camera controlled by PointerLockControls
 
 // --- Input Handling (WASD Movement) ---
 const keyStates = {};
 document.addEventListener('keydown', (event) => {
     keyStates[event.code] = true;
+    // Prevent default browser actions for movement keys
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
         event.preventDefault();
     }
@@ -78,8 +79,8 @@ const floorMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.2
 });
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
+floor.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+floor.receiveShadow = true; // Floor should receive shadows
 scene.add(floor);
 
 // Ceiling
@@ -95,11 +96,10 @@ ceiling.rotation.x = Math.PI / 2; // Rotate to face down
 ceiling.receiveShadow = true; // Can receive bounced light (indirectly)
 scene.add(ceiling);
 
-
 // Walls
 const wallMaterial = new THREE.MeshStandardMaterial({
     color: 0xe0e0e0, // Slightly warmer wall color
-    side: THREE.DoubleSide, // Render both sides (important if camera gets close)
+    side: THREE.DoubleSide, // Render both sides
     roughness: 0.9
 });
 
@@ -128,10 +128,8 @@ wallRight.rotation.y = -Math.PI / 2;
 wallRight.receiveShadow = true;
 scene.add(wallRight);
 
-
 // --- Texture Loading ---
 const textureLoader = new THREE.TextureLoader();
-// Assuming textures folder exists and placeholder files are there or replaced
 // Add error handling for texture loading
 function loadTexture(path, encoding = THREE.LinearEncoding) {
     return textureLoader.load(path,
@@ -142,12 +140,15 @@ function loadTexture(path, encoding = THREE.LinearEncoding) {
         },
         undefined, // onProgress callback (optional)
         (err) => { // onError callback
-            console.error(`Error loading texture: ${path}`, err);
-            // Optional: Display a fallback color/texture?
+            console.error(`Error loading texture: ${path}. Ensure the 'textures' folder exists at the root and contains the file.`, err);
+            // Add a visual indicator maybe? Like making the object red.
         }
     );
 }
 
+// **IMPORTANT**: Make sure you have a 'textures' folder at the root of your
+// deployed project (same level as index.html) and these files are inside it.
+// If your filenames are different, change them here.
 const towelTexture = loadTexture('textures/towel_placeholder_diffuse.jpg', THREE.sRGBEncoding);
 towelTexture.wrapS = THREE.RepeatWrapping;
 towelTexture.wrapT = THREE.RepeatWrapping;
@@ -156,31 +157,31 @@ const towelNormalMap = loadTexture('textures/towel_placeholder_normal.jpg');
 
 const bathrobeTexture = loadTexture('textures/bathrobe_placeholder_diffuse.jpg', THREE.sRGBEncoding);
 
-
 // --- Add Textile Items (Using Placeholders) ---
 
-const foldedTowelGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.5);
+const foldedTowelGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.5); // Width, Height, Depth
 const foldedTowelMaterial = new THREE.MeshStandardMaterial({
-    map: towelTexture,
-    normalMap: towelNormalMap,
-    roughness: 0.9,
-    metalness: 0.0,
+    map: towelTexture, // Base color texture
+    normalMap: towelNormalMap, // Adds bumpy detail
+    roughness: 0.9, // Towels are usually not shiny
+    metalness: 0.0, // Non-metallic
 });
 const foldedTowel = new THREE.Mesh(foldedTowelGeometry, foldedTowelMaterial);
-foldedTowel.position.set(-3, 0.25, -4);
+foldedTowel.position.set(-3, 0.25, -4); // Position on the floor
 foldedTowel.castShadow = true;
 foldedTowel.receiveShadow = true;
 scene.add(foldedTowel);
 
-const hangingBathrobeGeometry = new THREE.PlaneGeometry(1, 1.5);
+const hangingBathrobeGeometry = new THREE.PlaneGeometry(1, 1.5); // Simple plane
 const hangingBathrobeMaterial = new THREE.MeshStandardMaterial({
     map: bathrobeTexture,
-    side: THREE.DoubleSide,
+    side: THREE.DoubleSide, // Visible from both sides
     roughness: 0.85,
     metalness: 0.0,
+    // Add normal map etc. for bathrobe if available
 });
 const hangingBathrobe = new THREE.Mesh(hangingBathrobeGeometry, hangingBathrobeMaterial);
-hangingBathrobe.position.set(3, 1.6, -5);
+hangingBathrobe.position.set(3, 1.6, -5); // Position it hanging
 hangingBathrobe.castShadow = true;
 scene.add(hangingBathrobe);
 
@@ -192,14 +193,13 @@ stand.castShadow = true;
 stand.receiveShadow = true;
 scene.add(stand);
 
-const drapedTowelGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.5);
-const drapedTowel = new THREE.Mesh(drapedTowelGeometry, foldedTowelMaterial);
-drapedTowel.position.set(0, 1.15, -6);
-drapedTowel.rotation.z = Math.PI / 16;
+const drapedTowelGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.5); // Draped towel shape
+const drapedTowel = new THREE.Mesh(drapedTowelGeometry, foldedTowelMaterial); // Reuse towel material
+drapedTowel.position.set(0, 1.15, -6); // Position on top of stand
+drapedTowel.rotation.z = Math.PI / 16; // Slight angle
 drapedTowel.castShadow = true;
 drapedTowel.receiveShadow = true;
 scene.add(drapedTowel);
-
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
@@ -237,7 +237,6 @@ function animate() {
         const padding = 1.0; // How close to the wall you can get
         camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
         camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
-
     }
 
     // --- Rendering ---
@@ -254,4 +253,4 @@ window.addEventListener('resize', () => {
 // --- Start the Loop ---
 animate();
 
-console.log("INFO: Using placeholder textures. Ensure 'textures' folder exists and contains files, or update paths.");
+console.log("Showroom script loaded. Ensure 'textures' folder and image files exist.");
