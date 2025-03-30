@@ -1,366 +1,130 @@
 // --- Basic Setup ---
 const scene = new THREE.Scene();
+// Use Red background for high visibility if nothing renders
 scene.background = new THREE.Color(0xff0000); // Bright Red
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.y = 1.6; // Simulate average eye height
-camera.position.z = 2; // Start slightly back from the center
+
+// --- SET INITIAL CAMERA POSITION AND ORIENTATION ---
+// Place the camera at a known reasonable spot
+camera.position.set(0, 1.6, 5); // x=0, y=eye height, z=5 units back from center
+
+// Make the camera look towards the center of the scene (origin)
+camera.lookAt(0, 0, 0); // Look at point (0,0,0)
+
+// IMPORTANT: Update the camera's matrices after setting position/lookAt
+camera.updateMatrixWorld();
+console.log("Initial Camera Position Set:", camera.position);
+console.log("Initial Camera Target Set using lookAt(0,0,0)");
+// --- END OF INITIAL CAMERA SETUP ---
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
-renderer.outputEncoding = THREE.sRGBEncoding; // Correct color output
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
-// --- Lighting ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // White light, moderate intensity
+// --- Lighting (Keep simple lighting) ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
-
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(10, 15, 10); // Position the light source
+directionalLight.position.set(10, 15, 10);
 directionalLight.castShadow = true;
-// Configure shadow properties
-directionalLight.shadow.mapSize.width = 2048; // Higher resolution shadows
-directionalLight.shadow.mapSize.height = 2048;
-directionalLight.shadow.camera.near = 0.5;
-directionalLight.shadow.camera.far = 50;
-directionalLight.shadow.camera.left = -15;
-directionalLight.shadow.camera.right = 15;
-directionalLight.shadow.camera.top = 15;
-directionalLight.shadow.camera.bottom = -15;
 scene.add(directionalLight);
-scene.add(directionalLight.target); // Important for directing the light
+scene.add(directionalLight.target);
 
 // --- Controls (Pointer Lock for Mouse Look) ---
 const blocker = document.getElementById('blocker');
 const instructions = document.getElementById('instructions');
 const controls = new THREE.PointerLockControls(camera, renderer.domElement);
 
+// Basic click listener - just tries to lock
 instructions.addEventListener('click', () => {
-    console.log("Instructions clicked! Preparing to lock controls...");
-    try {
-        // --- Attempt 1: Update Matrix ---
-        camera.updateMatrixWorld(); // Explicitly update camera matrices
-        console.log("Called camera.updateMatrixWorld()");
-        // ---
-
-        // Log camera state BEFORE locking
-        const preLockPosition = controls.getObject().position; // Use controls.getObject() as it's the one being controlled
-        const preLockDirection = new THREE.Vector3();
-        controls.getObject().getWorldDirection(preLockDirection); // Get direction from the controlled object
-        console.log(`Camera state BEFORE lock: Pos=(${preLockPosition.x.toFixed(2)}, ${preLockPosition.y.toFixed(2)}, ${preLockPosition.z.toFixed(2)}), Dir=(${preLockDirection.x.toFixed(2)}, ${preLockDirection.y.toFixed(2)}, ${preLockDirection.z.toFixed(2)})`);
-        if (isNaN(preLockPosition.x) || isNaN(preLockPosition.y) || isNaN(preLockPosition.z)) {
-             console.error("!!! NaN DETECTED BEFORE LOCK !!!");
-        }
-        // ---
-
-        // --- Attempt 2: Slight Delay (Use this if Attempt 1 doesn't work alone) ---
-        // Comment out the direct call below if using the delay:
-        // controls.lock();
-        // console.log("controls.lock() called directly.");
-
-        // UNCOMMENT BELOW TO TRY DELAY:
-        setTimeout(() => {
-            console.log("Attempting lock after short delay...");
-            controls.lock();
-            console.log("controls.lock() called after delay.");
-            logStateAfterLock(); // Call the logging function after delayed lock
-        }, 50); // 50 millisecond delay - adjust if needed
-        // --- END OF DELAY BLOCK ---
-
-
-        // Log state again AFTER lock (if using direct call)
-        // If using the delay, this logging will happen *before* the lock.
-        // We'll move the post-lock logging into a separate function called by both paths.
-        // logStateAfterLock(); // Moved call
-
-
-    } catch (e) {
-        console.error("Error during click/lock process:", e);
-    }
+    console.log("Instructions clicked! Attempting lock...");
+    controls.lock(); // Directly attempt lock
 });
 
-// Helper function to log state after lock attempt
-function logStateAfterLock() {
-    // Use setTimeout to check state slightly after lock call completes
-    setTimeout(() => {
-        const postLockPosition = controls.getObject().position;
-        const postLockDirection = new THREE.Vector3();
-        controls.getObject().getWorldDirection(postLockDirection);
-        console.log(`Camera state AFTER lock attempt (timeout): Pos=(${postLockPosition.x.toFixed(2)}, ${postLockPosition.y.toFixed(2)}, ${postLockPosition.z.toFixed(2)}), Dir=(${postLockDirection.x.toFixed(2)}, ${postLockDirection.y.toFixed(2)}, ${postLockDirection.z.toFixed(2)})`);
-
-        // Add specific NaN checks
-        if (isNaN(postLockPosition.x) || isNaN(postLockPosition.y) || isNaN(postLockPosition.z)) {
-            console.error("!!! Camera position contains NaN after lock !!!");
-        } else {
-            console.log("Camera position seems valid after lock."); // Confirmation
-        }
-    }, 0); // Check immediately after current event loop tick
-}
-
-// --- Animation Loop ---
-// Keep the animation loop with the try...catch and NaN checks as before
-const clock = new THREE.Clock();
-let frameCount = 0;
-
-function animate() {
-    requestAnimationFrame(animate);
-    frameCount++;
-
-    const camPosLog = controls.getObject().position;
-    if (isNaN(camPosLog.x) || isNaN(camPosLog.y) || isNaN(camPosLog.z)) {
-         console.error(`!!! NaN DETECTED IN ANIMATE LOOP (Frame ${frameCount}) !!! Pos:`, camPosLog);
-         return; // Stop animation loop if NaN detected to prevent spam/further issues
-    } else if (frameCount % 120 === 0) {
-        // console.log(`Animate loop running, Frame: ${frameCount}, Camera Pos:`, camPosLog); // Reduce logging noise
-    }
-
-    try {
-        const delta = clock.getDelta();
-        if (controls.isLocked === true) {
-            // --- Handle Movement ---
-            const moveDirection = { /* ... movement calculation ... */ };
-            const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
-            const moveDistanceRight = moveDirection.right * moveSpeed * delta;
-            if (moveDistanceForward !== 0) controls.moveForward(moveDistanceForward);
-            if (moveDistanceRight !== 0) controls.moveRight(moveDistanceRight);
-            controls.getObject().position.y = 1.6; // Floor constraint
-            const camPos = controls.getObject().position; // Boundary checks...
-            const padding = 1.0;
-            camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
-            camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
-        }
-        // --- Rendering ---
-        renderer.render(scene, camera);
-    } catch (error) {
-        console.error("Error in animate loop:", error);
-    }
-}
-
-// ... (rest of the code)
+// Basic lock/unlock listeners - just hide/show overlay
 controls.addEventListener('lock', () => {
+    console.log("Controls Locked");
     instructions.style.display = 'none';
     blocker.style.display = 'none';
 });
 
 controls.addEventListener('unlock', () => {
-    blocker.style.display = 'flex'; // Use flex again
+    console.log("Controls Unlocked");
+    blocker.style.display = 'flex';
     instructions.style.display = '';
 });
 
-scene.add(controls.getObject()); // Add the camera controlled by PointerLockControls
+// Add camera object managed by controls to scene
+scene.add(controls.getObject());
 
-// --- Input Handling (WASD Movement) ---
+// --- Input Handling (Keep basic structure) ---
 const keyStates = {};
-document.addEventListener('keydown', (event) => {
-    keyStates[event.code] = true;
-    // Prevent default browser actions for movement keys
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-        event.preventDefault();
-    }
-});
-document.addEventListener('keyup', (event) => {
-    keyStates[event.code] = false;
-});
+document.addEventListener('keydown', (event) => { keyStates[event.code] = true; if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) { event.preventDefault(); } });
+document.addEventListener('keyup', (event) => { keyStates[event.code] = false; });
+const moveSpeed = 5.0;
 
-const moveSpeed = 5.0; // Units per second
-
-// --- Environment Setup (Room) ---
+// --- Simplified Environment Setup ---
 const roomSize = { width: 30, height: 5, depth: 30 };
 
-// Floor
+// Floor (KEEP)
 const floorGeometry = new THREE.PlaneGeometry(roomSize.width, roomSize.depth);
-const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0xaaaaaa, // Slightly darker floor
-    roughness: 0.8,
-    metalness: 0.2
-});
+const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8, metalness: 0.2 });
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2; // Rotate to be horizontal
-floor.receiveShadow = true; // Floor should receive shadows
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
 scene.add(floor);
 
-// Ceiling
-const ceilingGeometry = new THREE.PlaneGeometry(roomSize.width, roomSize.depth);
-const ceilingMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf0f0f0, // Light ceiling
-    side: THREE.DoubleSide, // Visible from below
-    roughness: 0.9
+// --- Add ONE Visible Object ---
+const testBoxGeometry = new THREE.BoxGeometry(1, 1, 1); // Simple 1x1x1 cube
+const testBoxMaterial = new THREE.MeshStandardMaterial({
+    color: 0x00ff00, // Bright Green
+    roughness: 0.7,
 });
-const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
-ceiling.position.y = roomSize.height;
-ceiling.rotation.x = Math.PI / 2; // Rotate to face down
-ceiling.receiveShadow = true; // Can receive bounced light (indirectly)
-scene.add(ceiling);
+const testBox = new THREE.Mesh(testBoxGeometry, testBoxMaterial);
+testBox.position.set(0, 0.5, 0); // Place at origin, sitting on the floor
+testBox.castShadow = true;
+testBox.receiveShadow = true;
+scene.add(testBox);
+console.log("Test box added at:", testBox.position);
 
-// Walls
-const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0xe0e0e0, // Slightly warmer wall color
-    side: THREE.DoubleSide, // Render both sides
-    roughness: 0.9
-});
-
-const wallGeometryZ = new THREE.PlaneGeometry(roomSize.width, roomSize.height);
-const wallBack = new THREE.Mesh(wallGeometryZ, wallMaterial);
-wallBack.position.set(0, roomSize.height / 2, -roomSize.depth / 2);
-wallBack.receiveShadow = true;
-scene.add(wallBack);
-
-const wallFront = new THREE.Mesh(wallGeometryZ, wallMaterial);
-wallFront.position.set(0, roomSize.height / 2, roomSize.depth / 2);
-wallFront.rotation.y = Math.PI;
-wallFront.receiveShadow = true;
-scene.add(wallFront);
-
-const wallGeometryX = new THREE.PlaneGeometry(roomSize.depth, roomSize.height);
-const wallLeft = new THREE.Mesh(wallGeometryX, wallMaterial);
-wallLeft.position.set(-roomSize.width / 2, roomSize.height / 2, 0);
-wallLeft.rotation.y = Math.PI / 2;
-wallLeft.receiveShadow = true;
-scene.add(wallLeft);
-
-const wallRight = new THREE.Mesh(wallGeometryX, wallMaterial);
-wallRight.position.set(roomSize.width / 2, roomSize.height / 2, 0);
-wallRight.rotation.y = -Math.PI / 2;
-wallRight.receiveShadow = true;
-scene.add(wallRight);
-
-// --- Texture Loading ---
-const textureLoader = new THREE.TextureLoader();
-// Add error handling for texture loading
-function loadTexture(path, encoding = THREE.LinearEncoding) {
-    return textureLoader.load(path,
-        (tex) => { // onLoad callback
-            tex.encoding = encoding;
-            tex.needsUpdate = true;
-            console.log(`Texture loaded: ${path}`);
-        },
-        undefined, // onProgress callback (optional)
-        (err) => { // onError callback
-            console.error(`Error loading texture: ${path}. Ensure the 'textures' folder exists at the root and contains the file.`, err);
-            // Add a visual indicator maybe? Like making the object red.
-        }
-    );
-}
-
-// **IMPORTANT**: Make sure you have a 'textures' folder at the root of your
-// deployed project (same level as index.html) and these files are inside it.
-// If your filenames are different, change them here.
-const towelTexture = loadTexture('textures/towel_placeholder_diffuse.jpg', THREE.sRGBEncoding);
-towelTexture.wrapS = THREE.RepeatWrapping;
-towelTexture.wrapT = THREE.RepeatWrapping;
-towelTexture.repeat.set(2, 2);
-const towelNormalMap = loadTexture('textures/towel_placeholder_normal.jpg');
-
-const bathrobeTexture = loadTexture('textures/bathrobe_placeholder_diffuse.jpg', THREE.sRGBEncoding);
-
-// --- Add Textile Items (Using Placeholders) ---
-
-const foldedTowelGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.5); // Width, Height, Depth
-const foldedTowelMaterial = new THREE.MeshStandardMaterial({
-    map: towelTexture, // Base color texture
-    normalMap: towelNormalMap, // Adds bumpy detail
-    roughness: 0.9, // Towels are usually not shiny
-    metalness: 0.0, // Non-metallic
-});
-const foldedTowel = new THREE.Mesh(foldedTowelGeometry, foldedTowelMaterial);
-foldedTowel.position.set(-3, 0.25, -4); // Position on the floor
-foldedTowel.castShadow = true;
-foldedTowel.receiveShadow = true;
-scene.add(foldedTowel);
-
-const hangingBathrobeGeometry = new THREE.PlaneGeometry(1, 1.5); // Simple plane
-const hangingBathrobeMaterial = new THREE.MeshStandardMaterial({
-    map: bathrobeTexture,
-    side: THREE.DoubleSide, // Visible from both sides
-    roughness: 0.85,
-    metalness: 0.0,
-    // Add normal map etc. for bathrobe if available
-});
-const hangingBathrobe = new THREE.Mesh(hangingBathrobeGeometry, hangingBathrobeMaterial);
-hangingBathrobe.position.set(3, 1.6, -5); // Position it hanging
-hangingBathrobe.castShadow = true;
-scene.add(hangingBathrobe);
-
-const standGeometry = new THREE.BoxGeometry(0.2, 1.2, 0.2);
-const standMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.4 });
-const stand = new THREE.Mesh(standGeometry, standMaterial);
-stand.position.set(0, 0.6, -6);
-stand.castShadow = true;
-stand.receiveShadow = true;
-scene.add(stand);
-
-const drapedTowelGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.5); // Draped towel shape
-const drapedTowel = new THREE.Mesh(drapedTowelGeometry, foldedTowelMaterial); // Reuse towel material
-drapedTowel.position.set(0, 1.15, -6); // Position on top of stand
-drapedTowel.rotation.z = Math.PI / 16; // Slight angle
-drapedTowel.castShadow = true;
-drapedTowel.receiveShadow = true;
-scene.add(drapedTowel);
-
-// --- Animation Loop ---
+// --- Animation Loop (Simplified - No NaN checks for now) ---
 const clock = new THREE.Clock();
-let frameCount = 0; // Add a frame counter for debugging
 
 function animate() {
-    // Request the next frame FIRST (important pattern)
     requestAnimationFrame(animate);
 
-    // --- Start Debugging Block ---
-    frameCount++;
-    if (frameCount % 60 === 0) { // Log every 60 frames (approx once per second)
-        console.log(`Animate loop running, Frame: ${frameCount}, Camera Pos:`, camera.position);
-        if (!controls.isLocked) {
-            console.log("Controls are NOT locked.");
-        }
+    const delta = clock.getDelta();
+
+    // --- Handle Movement (Basic) ---
+    if (controls.isLocked === true) {
+        const moveDirection = {
+            forward: Number(keyStates['KeyW'] || keyStates['ArrowUp']) - Number(keyStates['KeyS'] || keyStates['ArrowDown']),
+            right: Number(keyStates['KeyD'] || keyStates['ArrowRight']) - Number(keyStates['KeyA'] || keyStates['ArrowLeft'])
+        };
+        const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
+        const moveDistanceRight = moveDirection.right * moveSpeed * delta;
+        if (moveDistanceForward !== 0) controls.moveForward(moveDistanceForward);
+        if (moveDistanceRight !== 0) controls.moveRight(moveDistanceRight);
+
+        // Simple floor constraint - USE controls.getObject()
+        controls.getObject().position.y = Math.max(0.5, controls.getObject().position.y); // Prevent going below floor slightly
+
+        // Basic boundary checks - Optional for now
+        // const camPos = controls.getObject().position;
+        // const padding = 1.0;
+        // camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
+        // camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
     }
-    // --- End Debugging Block ---
 
-    try { // Wrap the main logic in a try...catch
-        const delta = clock.getDelta();
-
-        // --- Handle Movement ---
-        if (controls.isLocked === true) {
-            // Calculate movement direction based on keys pressed *this frame*
-            const moveDirection = {
-                forward: Number(keyStates['KeyW'] || keyStates['ArrowUp']) - Number(keyStates['KeyS'] || keyStates['ArrowDown']),
-                right: Number(keyStates['KeyD'] || keyStates['ArrowRight']) - Number(keyStates['KeyA'] || keyStates['ArrowLeft'])
-            };
-
-            // Calculate distance to move this frame
-            const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
-            const moveDistanceRight = moveDirection.right * moveSpeed * delta;
-
-            // Apply movement using PointerLockControls methods
-            if (moveDistanceForward !== 0) {
-                controls.moveForward(moveDistanceForward);
-            }
-            if (moveDistanceRight !== 0) {
-                controls.moveRight(moveDistanceRight);
-            }
-
-            // Simple floor constraint: Reset Y position after movement
-            controls.getObject().position.y = 1.6;
-
-            // Prevent moving outside the basic room boundaries
-            const camPos = controls.getObject().position;
-            const padding = 1.0; // How close to the wall you can get
-            camPos.x = Math.max(-roomSize.width / 2 + padding, Math.min(roomSize.width / 2 - padding, camPos.x));
-            camPos.z = Math.max(-roomSize.depth / 2 + padding, Math.min(roomSize.depth / 2 - padding, camPos.z));
-        } else {
-             // Optional: log if controls are locked or not when debugging movement issues
-             // if (frameCount % 60 === 0) console.log("Controls not locked, skipping movement update.");
-        }
-
-        // --- Rendering ---
-        renderer.render(scene, camera);
-
-    } catch (error) {
-        console.error("Error in animate loop:", error);
-        // Optional: Stop the loop if a critical error occurs?
-        // (Be careful with this, might hide the cause)
-        // cancelAnimationFrame(animate); // Uncomment cautiously
+    // --- Rendering ---
+    try { // Keep basic try-catch for rendering errors
+      renderer.render(scene, camera);
+    } catch(renderError) {
+      console.error("Renderer error:", renderError);
     }
 }
 
@@ -372,7 +136,5 @@ window.addEventListener('resize', () => {
 }, false);
 
 // --- Start the Loop ---
-console.log("Starting animation loop..."); // Confirm loop start
 animate();
-
-console.log("Showroom script loaded. Ensure 'textures' folder and image files exist.");
+console.log("Showroom script loaded and simplified. Initial camera set.");
