@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textile Showroom</title>
+    <style>
+        body { margin: 0; overflow: hidden; /* Prevent scrollbars */ }
+        canvas { display: block; }
+        #blocker {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex; /* Use flexbox for centering */
+            justify-content: center;
+            align-items: center;
+        }
+        #instructions {
+            width: 50%;
+            max-width: 300px;
+            cursor: pointer;
+            padding: 20px;
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            text-align: center;
+            font-family: sans-serif;
+            font-size: 1.2em;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="blocker">
+        <div id="instructions">
+            Click to Explore Showroom<br>(Use WASD keys to move, Mouse to look)
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- PointerLockControls for mouse look -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <!-- Optional: GLTFLoader if you load models later -->
+    <!-- <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script> -->
+    <script src="showroom.js"></script>
+</body>
+</html>
