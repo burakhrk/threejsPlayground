@@ -1,133 +1,172 @@
-// --- Basic Setup ---
-const scene = new THREE.Scene();
-// Use Red background for high visibility if nothing renders
-scene.background = new THREE.Color(0xff0000); // Bright Red
+let camera, scene, renderer, controls;
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+const clock = new THREE.Clock(); // Declare clock globally
 
-// --- SET INITIAL CAMERA POSITION AND ORIENTATION ---
-// Place the camera at a known reasonable spot
-camera.position.set(0, 1.6, 5); // x=0, y=eye height, z=5 units back from center
-// Make the camera look towards the center of the scene (origin)
-camera.lookAt(0, 0, 0); // Look at point (0,0,0)
-// IMPORTANT: Update the camera's matrices after setting position/lookAt
-camera.updateMatrixWorld();
-console.log("Initial Camera Position Set:", camera.position);
-console.log("Initial Camera Target Set using lookAt(0,0,0)");
-// --- END OF INITIAL CAMERA SETUP ---
+init();
+animate();
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputEncoding = THREE.sRGBEncoding;
-document.body.appendChild(renderer.domElement);
+function init() {
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xff0000); // Red background for testing visibility
+    scene.fog = new THREE.Fog(0xff0000, 0, 50); // Add fog matching background for distance fade
 
-// --- Lighting (Keep simple lighting) ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(10, 15, 10);
-directionalLight.castShadow = true;
-scene.add(directionalLight);
-scene.add(directionalLight.target);
+    // Camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.y = 1.6; // Eye level
+    camera.position.z = 5;  // Start back
+    console.log("Initial Camera Position:", camera.position);
 
-// --- Controls (Pointer Lock for Mouse Look) ---
-const blocker = document.getElementById('blocker');
-const instructions = document.getElementById('instructions');
-const controls = new THREE.PointerLockControls(camera, renderer.domElement);
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-// Basic click listener - just tries to lock
-instructions.addEventListener('click', () => {
-    console.log("Instructions clicked! Attempting lock...");
-    controls.lock(); // Directly attempt lock
-});
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7.5);
+    // No shadows for this simple test
+    // directionalLight.castShadow = true;
+    scene.add(directionalLight);
 
-// Basic lock/unlock listeners - just hide/show overlay
-controls.addEventListener('lock', () => {
-    console.log("Controls Locked");
-    instructions.style.display = 'none';
-    blocker.style.display = 'none';
-});
+    // Controls - Standard Setup
+    controls = new THREE.PointerLockControls(camera, document.body); // Attach to document body
 
-controls.addEventListener('unlock', () => {
-    console.log("Controls Unlocked");
-    blocker.style.display = 'flex';
-    instructions.style.display = '';
-});
+    const blocker = document.getElementById('blocker');
+    const instructions = document.getElementById('instructions');
 
-// Add camera object managed by controls to scene
-scene.add(controls.getObject());
+    instructions.addEventListener('click', function () {
+        console.log("Instructions clicked, requesting lock...");
+        controls.lock();
+    });
 
-// --- Input Handling (Keep basic structure) ---
-const keyStates = {};
-document.addEventListener('keydown', (event) => { keyStates[event.code] = true; if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) { event.preventDefault(); } });
-document.addEventListener('keyup', (event) => { keyStates[event.code] = false; });
-const moveSpeed = 5.0;
+    controls.addEventListener('lock', function () {
+        console.log("Controls Locked.");
+        instructions.style.display = 'none';
+        blocker.style.display = 'none';
+    });
 
-// --- Simplified Environment Setup ---
-const roomSize = { width: 30, height: 5, depth: 30 };
+    controls.addEventListener('unlock', function () {
+        console.log("Controls Unlocked.");
+        blocker.style.display = 'flex';
+        instructions.style.display = '';
+    });
 
-// Floor (KEEP)
-const floorGeometry = new THREE.PlaneGeometry(roomSize.width, roomSize.depth);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8, metalness: 0.2 });
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
+    // Add the controls object to the scene
+    // NOTE: PointerLockControls *moves* the camera directly,
+    // you don't typically add controls.getObject() to the scene unless
+    // you are nesting it for specific reasons. Let's try without adding it first.
+    // scene.add(controls.getObject()); // Let's comment this out for standard usage
 
-// --- Add ONE Visible Object ---
-const testBoxGeometry = new THREE.BoxGeometry(1, 1, 1); // Simple 1x1x1 cube
-const testBoxMaterial = new THREE.MeshStandardMaterial({
-    color: 0x00ff00, // Bright Green
-    roughness: 0.7,
-});
-const testBox = new THREE.Mesh(testBoxGeometry, testBoxMaterial);
-testBox.position.set(0, 0.5, 0); // Place at origin, sitting on the floor
-testBox.castShadow = true;
-testBox.receiveShadow = true;
-scene.add(testBox);
-console.log("Test box added at:", testBox.position);
+    // Input Listeners
+    const onKeyDown = function (event) {
+        switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW': moveForward = true; break;
+            case 'ArrowLeft':
+            case 'KeyA': moveLeft = true; break;
+            case 'ArrowDown':
+            case 'KeyS': moveBackward = true; break;
+            case 'ArrowRight':
+            case 'KeyD': moveRight = true; break;
+        }
+    };
 
-// --- Animation Loop ---
-// *** ENSURE clock is declared ONLY HERE ***
-const clock = new THREE.Clock();
+    const onKeyUp = function (event) {
+        switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW': moveForward = false; break;
+            case 'ArrowLeft':
+            case 'KeyA': moveLeft = false; break;
+            case 'ArrowDown':
+            case 'KeyS': moveBackward = false; break;
+            case 'ArrowRight':
+            case 'KeyD': moveRight = false; break;
+        }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+
+    // --- Simplified Scene ---
+    // Floor
+    const floorGeometry = new THREE.PlaneGeometry(50, 50); // Larger floor
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.9 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    // floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Green Box at Origin
+    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 }); // Green
+    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+    box.position.y = 0.5; // Sit on the floor
+    // box.castShadow = true;
+    scene.add(box);
+    console.log("Green box added at origin.");
+
+    // Handle Resize
+    window.addEventListener('resize', onWindowResize);
+    console.log("Initialization Complete.");
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 function animate() {
     requestAnimationFrame(animate);
 
-    const delta = clock.getDelta(); // Use the single declared clock
+    const delta = clock.getDelta();
 
-    // --- Handle Movement (Basic) ---
+    // Standard PointerLockControls Movement Logic
     if (controls.isLocked === true) {
-        const moveDirection = {
-            forward: Number(keyStates['KeyW'] || keyStates['ArrowUp']) - Number(keyStates['KeyS'] || keyStates['ArrowDown']),
-            right: Number(keyStates['KeyD'] || keyStates['ArrowRight']) - Number(keyStates['KeyA'] || keyStates['ArrowLeft'])
-        };
-        const moveDistanceForward = moveDirection.forward * moveSpeed * delta;
-        const moveDistanceRight = moveDirection.right * moveSpeed * delta;
-        if (moveDistanceForward !== 0) controls.moveForward(moveDistanceForward);
-        if (moveDistanceRight !== 0) controls.moveRight(moveDistanceRight);
+        velocity.x -= velocity.x * 10.0 * delta; // Damping
+        velocity.z -= velocity.z * 10.0 * delta;
+        // velocity.y -= 9.8 * 100.0 * delta; // Gravity (optional, start without)
 
-        // Simple floor constraint - USE controls.getObject()
-        controls.getObject().position.y = Math.max(0.5, controls.getObject().position.y); // Prevent going below floor slightly
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize(); // Ensures consistent movement speed in all directions
+
+        const speed = 400.0; // Adjust speed factor as needed
+
+        if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+        if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+
+        // Move the controls object itself
+        controls.moveRight(-velocity.x * delta);
+        controls.moveForward(-velocity.z * delta);
+
+        // Simple floor constraint - prevent falling through floor
+        if (controls.getObject().position.y < 1.6) {
+             velocity.y = 0; // Stop downward velocity if hitting floor level
+             controls.getObject().position.y = 1.6; // Reset to floor level
+        }
+
+    } else {
+        // Optional: Reset velocity when controls are unlocked
+        velocity.set(0, 0, 0);
     }
 
-    // --- Rendering ---
-    try { // Keep basic try-catch for rendering errors
-      renderer.render(scene, camera);
+    // Render the scene
+    try {
+        renderer.render(scene, camera);
     } catch(renderError) {
-      console.error("Renderer error:", renderError);
+        console.error("Renderer error:", renderError);
     }
 }
 
-// --- Handle Window Resize ---
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}, false);
-
-// --- Start the Loop ---
-animate();
-console.log("Showroom script loaded and simplified. Initial camera set.");
+console.log("Showroom script loaded (Simple Controls version).");
