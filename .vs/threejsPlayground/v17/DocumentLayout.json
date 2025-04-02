@@ -18,11 +18,15 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Document",
@@ -32,9 +36,10 @@
               "RelativeDocumentMoniker": "showroom.js",
               "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\showroom.js",
               "RelativeToolTip": "showroom.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAALYAAAAAAAAAAADwv0MBAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-04-02T09:39:39.955Z"
+              "WhenOpened": "2025-04-02T09:39:39.955Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -44,7 +49,7 @@
               "RelativeDocumentMoniker": "index.html",
               "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\index.html",
               "RelativeToolTip": "index.html",
-              "ViewState": "AgIAALIAAAAAAAAAAAAAALsAAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAALcAAAAAAAAAAAAAAL8AAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2025-04-02T09:39:28.412Z",
               "EditorCaption": ""
