@@ -5,25 +5,18 @@ const gltfLoader = new THREE.GLTFLoader();
 // Defines available models for each category
 const showroomAssetConfig = {
     towels: [
-        { name: 'Test1', url: 'models/hand_towel.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+        // The first swappable:true item will be loaded initially
+        { name: 'Test1 (Initial)', url: 'models/hand_towel.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+        // These will NOT be loaded initially, only when selected from sidebar
         { name: 'Test2', url: 'models/bathrobe.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
         { name: 'Test3', url: 'models/towels.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
-
-       // { name: 'Towel Stack', url: 'models/hanging_towel.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false }, // Example static prop
+        // This static item will NOT be loaded initially with the new logic
+        // { name: 'Towel Stack', url: 'models/hanging_towel.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false },
     ],
-
+    // Add other categories back if needed, following the same pattern
     /*
-    bathrobes: [
-        { name: 'White Cotton Robe', url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true }, // Initial Swappable
-        { name: 'Fancy Robe Stand', url: 'models/towels.glb', position: [-2.5, 0, 1], scale: [1, 1, 1], swappable: false }, // Example static prop
-        { name: 'Blue Silk Robe', url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true }, // Alternative Swappable (not loaded initially)
-        { name: 'Hooded Terry Robe', url: 'models/hanging_towel.glb', position: [-1.5, 0.8, 1], scale: [0.65, 0.65, 0.65], rotationY: Math.PI / 4, swappable: true }, // Alternative Swappable (not loaded initially)
-    ],
-    accessories: [
-        { name: 'Simple Soap Dish', url: 'models/bathrobe.glb', position: [0, 0.9, -1], scale: [0.3, 0.3, 0.3], swappable: true }, // Initial Swappable
-        { name: 'Bath Mat', url: 'models/towels.glb', position: [0, 0.01, -0.5], scale: [1, 1, 1], swappable: false },
-        { name: 'Lotion Dispenser', url: 'models/towels.glb', position: [0.5, 0.9, -1], scale: [0.2, 0.2, 0.2], swappable: true }, // Alternative Swappable (not loaded initially)
-    ]
+    bathrobes: [ ... ],
+    accessories: [ ... ]
     */
 };
 
@@ -32,7 +25,8 @@ let currentSwappableModel = {
     model: null, // Reference to the THREE.Object3D
     configUrl: null // URL of the config used to load it
 };
-let otherLoadedAssets = []; // For non-swappable items
+// otherLoadedAssets will remain empty with the new loadInitialAssets logic unless static items are loaded elsewhere
+let otherLoadedAssets = [];
 
 // --- Helper Function for Disposal ---
 function disposeModel(model) {
@@ -41,102 +35,113 @@ function disposeModel(model) {
         if (child.isMesh) {
             if (child.geometry) child.geometry.dispose();
             if (child.material) {
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(material => disposeMaterial(material));
-                } else {
-                    disposeMaterial(child.material);
-                }
+                if (Array.isArray(child.material)) child.material.forEach(disposeMaterial);
+                else disposeMaterial(child.material);
             }
         }
     });
-    // console.log(`AssetLoader: Disposed resources for a model.`);
 }
-
 function disposeMaterial(material) {
     material.dispose();
     for (const key of Object.keys(material)) {
         const value = material[key];
-        if (value && typeof value === 'object' && value.isTexture) {
-            value.dispose();
-        }
+        if (value && typeof value === 'object' && value.isTexture) value.dispose();
     }
 }
-// --- End Helper Function ---
 
-/** Clears assets, disposes resources, resets state. */
+/** Clears the currently loaded swappable model and any other tracked assets. */
 function clearAllAssets(scene) {
-    console.log("AssetLoader: Clearing all loaded assets and disposing resources.");
+    console.log("AssetLoader: Clearing all tracked assets and disposing resources.");
     if (currentSwappableModel.model) {
         scene.remove(currentSwappableModel.model);
         disposeModel(currentSwappableModel.model);
         currentSwappableModel.model = null;
         currentSwappableModel.configUrl = null;
     }
+    // Clear static assets too, though this array will likely be empty now
     otherLoadedAssets.forEach(asset => {
         scene.remove(asset);
         disposeModel(asset);
     });
     otherLoadedAssets = [];
-    console.log("AssetLoader: All assets cleared.");
+    console.log("AssetLoader: All tracked assets cleared.");
 }
 
-/** Loads initial assets: all static + the FIRST swappable one found. */
+// --- *** MODIFIED loadInitialAssets Function *** ---
+/**
+ * Loads ONLY the FIRST swappable asset found for the given sceneId.
+ * Does NOT load static assets or other swappable assets initially.
+ * @param {string} sceneId
+ * @param {THREE.Scene} scene
+ */
 function loadInitialAssets(sceneId, scene) {
-    if (!scene) { /* error */ return; }
-    clearAllAssets(scene); // Ensure clean state
+    if (!scene) {
+        console.error("AssetLoader: Scene required for loadInitialAssets.");
+        return;
+    }
+    clearAllAssets(scene); // Ensure clean state (removes previous model if any)
 
-    const assetsToLoad = showroomAssetConfig[sceneId];
-    if (!assetsToLoad || assetsToLoad.length === 0) { /* warning */ return; }
+    const assetsInCategory = showroomAssetConfig[sceneId];
+    if (!assetsInCategory || assetsInCategory.length === 0) {
+        console.warn(`AssetLoader: No asset configuration found for sceneId: ${sceneId}`);
+        return;
+    }
 
-    console.log(`AssetLoader: Loading initial assets for ${sceneId}`);
-    let initialSwappableFound = false;
+    // Find the very first item marked as swappable in this category
+    const initialSwappableConfig = assetsInCategory.find(config => config.swappable === true);
 
-    assetsToLoad.forEach(config => {
-        const isInitialSwappable = config.swappable && !initialSwappableFound;
-        const isStatic = !config.swappable;
+    if (initialSwappableConfig) {
+        console.log(`AssetLoader: Found initial swappable asset for ${sceneId}: "${initialSwappableConfig.name}". Loading ONLY this model...`);
 
-        // Only load if it's static OR the very first swappable one
-        if (isStatic || isInitialSwappable) {
-            gltfLoader.load(
-                config.url,
-                (gltf) => { // onLoad
-                    const model = gltf.scene;
-                    console.log(`AssetLoader: Loaded "${config.name}" (${config.url})`);
-                    applyConfigToModel(model, config);
-                    scene.add(model);
+        gltfLoader.load(
+            initialSwappableConfig.url,
+            (gltf) => { // onLoad
+                const model = gltf.scene;
+                console.log(`AssetLoader: Loaded initial model "${initialSwappableConfig.name}" (${initialSwappableConfig.url})`);
+                applyConfigToModel(model, initialSwappableConfig); // Apply position, scale etc.
+                scene.add(model);
 
-                    if (isInitialSwappable) {
-                        console.log(`AssetLoader: Setting initial swappable model: ${config.name}`);
-                        currentSwappableModel.model = model;
-                        currentSwappableModel.configUrl = config.url;
-                        initialSwappableFound = true; // Mark as found
-                    } else if (isStatic) {
-                        console.log(`AssetLoader: Added static asset: ${config.name}`);
-                        otherLoadedAssets.push(model);
-                    }
-                },
-                undefined, // onProgress
-                (error) => { console.error(`AssetLoader: ERROR loading "${config.name}" (${config.url}):`, error); }
-            );
-        } else if (config.swappable && !isInitialSwappable) {
-            // This is a swappable alternative, log but don't load now
-            console.log(`AssetLoader: Skipping initial load for swappable alternative: ${config.name}`);
-        }
-    });
+                // Update the state to track the loaded model
+                currentSwappableModel.model = model;
+                currentSwappableModel.configUrl = initialSwappableConfig.url;
+                console.log(`AssetLoader: Initial swappable model set: ${initialSwappableConfig.name}`);
+
+                // IMPORTANT: We do NOT continue loading other assets here.
+            },
+            undefined, // onProgress
+            (error) => {
+                console.error(`AssetLoader: ERROR loading initial swappable model "${initialSwappableConfig.name}" (${initialSwappableConfig.url}):`, error);
+                // Ensure state is clear if loading failed
+                currentSwappableModel.model = null;
+                currentSwappableModel.configUrl = null;
+            }
+        );
+
+    } else {
+        console.warn(`AssetLoader: No 'swappable: true' assets found for initial load in sceneId: ${sceneId}. Scene will be empty initially.`);
+        // Ensure state is clear if nothing was found to load
+        currentSwappableModel.model = null;
+        currentSwappableModel.configUrl = null;
+    }
+
+    // Static assets (swappable: false) and other swappable assets are intentionally NOT loaded by this function.
+    // The otherLoadedAssets array will remain empty unless static items are loaded via a different mechanism.
 }
+// --- *** END MODIFIED loadInitialAssets Function *** ---
 
 
 /** Swaps the current swappable model with a new one (loads on demand). */
 function swapModel(newModelConfigUrl, sceneId, scene) {
-    if (!scene) { /* error */ return; }
-    if (currentSwappableModel.configUrl === newModelConfigUrl) { /* log same */ return; }
+    // --- This function remains unchanged ---
+    if (!scene) { console.error("AssetLoader: Scene required for swapModel."); return; }
+    if (currentSwappableModel.configUrl === newModelConfigUrl) { console.log("AssetLoader: Model already displayed."); return; }
 
     const categoryConf = showroomAssetConfig[sceneId];
-    if (!categoryConf) { /* error */ return; }
+    if (!categoryConf) { console.error(`AssetLoader: No category config for sceneId: ${sceneId}`); return; }
     const newModelConfig = categoryConf.find(conf => conf.url === newModelConfigUrl && conf.swappable);
-    if (!newModelConfig) { /* error */ return; }
+    if (!newModelConfig) { console.error(`AssetLoader: Swappable config not found for URL: ${newModelConfigUrl}`); return; }
 
-    console.log(`AssetLoader: Swapping to model: ${newModelConfig.name} (${newModelConfigUrl})`);
+    console.log(`AssetLoader: Swapping to: ${newModelConfig.name} (${newModelConfigUrl})`);
 
     // 1. Remove and Dispose the old model
     if (currentSwappableModel.model) {
@@ -144,7 +149,9 @@ function swapModel(newModelConfigUrl, sceneId, scene) {
         disposeModel(currentSwappableModel.model);
         currentSwappableModel.model = null;
         currentSwappableModel.configUrl = null;
-    } else { /* warning */ }
+    } else {
+        console.warn("AssetLoader: No current swappable model found to remove during swap.");
+    }
 
     // 2. Load the new model
     gltfLoader.load(
@@ -156,15 +163,16 @@ function swapModel(newModelConfigUrl, sceneId, scene) {
             scene.add(newModel);
             currentSwappableModel.model = newModel; // Update state
             currentSwappableModel.configUrl = newModelConfig.url;
-            console.log(`AssetLoader: Swap complete for ${newModelConfig.name}.`);
+            console.log(`AssetLoader: Swap complete.`);
         },
         undefined, // onProgress
-        (error) => { console.error(`AssetLoader: ERROR loading model for swap "${newModelConfig.name}" (${newModelConfig.url}):`, error); }
+        (error) => { console.error(`AssetLoader: ERROR loading swap model "${newModelConfig.name}" (${newModelConfig.url}):`, error); }
     );
 }
 
 /** Helper to apply position/scale/rotation/shadows from config */
 function applyConfigToModel(model, config) {
+    // --- This function remains unchanged ---
     if (config.position) model.position.set(...config.position);
     if (config.scale) model.scale.set(...config.scale);
     if (config.rotationY !== undefined) model.rotation.y = config.rotationY;
