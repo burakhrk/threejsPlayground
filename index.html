@@ -11,7 +11,19 @@
             font-family: sans-serif;
             background-color: #f0f0f0; /* Background for the page */
         }
+        #blocker {
+            /* Keep existing styles: position, width, height, background, justify-content, align-items */
+            /* ... */
+            flex-direction: column; /* Stack instructions and button vertically */
+            /* Add some padding if needed */
+            /* padding-bottom: 50px; */
+        }
 
+        #back-to-menu-button {
+            margin-top: 25px; /* Add some space above the button */
+            position: relative; /* Keep it in the flex flow */
+            z-index: 6; /* Ensure it's clickable above blocker background */
+        }
         /* Carousel Styles */
         #carousel-container {
             position: fixed; /* Take up full screen */

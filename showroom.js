@@ -146,6 +146,14 @@ function initShowroom() {
     const blocker = document.getElementById('blocker');
     const instructions = document.getElementById('instructions');
 
+    // --- CSS Reminder ---
+    // Make sure your CSS includes:
+    // #blocker { flex-direction: column; /* ... other styles */ }
+    // #back-to-menu-button { margin-top: 25px; /* ... other styles */ }
+    // And ensure the .enter-button styles are defined as previously discussed.
+    // --- End CSS Reminder ---
+
+
     // Add checks for these elements too
     console.log("initShowroom: Container found:", container);
     console.log("initShowroom: Blocker found:", blocker);
@@ -153,17 +161,15 @@ function initShowroom() {
 
     if (!container || !blocker || !instructions) {
         console.error("Crucial elements for initShowroom not found inside initShowroom! Aborting init.");
-        // Maybe re-show carousel or display an error?
-        if(carouselContainer) carouselContainer.classList.remove('hidden');
-        if(showroomContainer) showroomContainer.style.display = 'none';
+        if (carouselContainer) carouselContainer.classList.remove('hidden');
+        if (showroomContainer) showroomContainer.style.display = 'none';
         return; // Prevent initialization if elements are missing
     }
 
     // Scene
     scene = new THREE.Scene();
-    // Let's use a less jarring background color now
     scene.background = new THREE.Color(0xdddddd);
-    scene.fog = new THREE.Fog(0xdddddd, 0, 75); // Adjust fog
+    scene.fog = new THREE.Fog(0xdddddd, 0, 75);
 
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -175,13 +181,11 @@ function initShowroom() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputEncoding = THREE.sRGBEncoding; // Use sRGB for better colors
-    renderer.shadowMap.enabled = true; // Enable shadows
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
-    // Append renderer canvas to the showroom container, not body
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
     console.log("initShowroom: Renderer created and appended.");
-
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -189,20 +193,29 @@ function initShowroom() {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 10, 7.5);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024; // Adjust shadow quality
+    directionalLight.shadow.mapSize.width = 1024;
     directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
-    scene.add(directionalLight.target); // Add target for better control
+    scene.add(directionalLight.target);
     console.log("initShowroom: Lighting added.");
 
-
-    // Controls - Attach to the container now or body? Body might be safer for fullscreen lock
+    // Controls
     controls = new THREE.PointerLockControls(camera, document.body);
     console.log("initShowroom: PointerLockControls initialized.");
 
     // Make sure blocker/instructions are visible initially within the 3D view
     blocker.style.display = 'flex';
     instructions.style.display = '';
+
+    // --- Helper function for removing the back button ---
+    function removeBackButton() {
+        const existingBackButton = document.getElementById('back-to-menu-button');
+        if (existingBackButton) {
+            console.log("Removing existing 'Back to Menu' button.");
+            existingBackButton.remove();
+        }
+    }
+    // --- End Helper function ---
 
 
     instructions.addEventListener('click', function () {
@@ -214,15 +227,46 @@ function initShowroom() {
         console.log("3D Controls Locked.");
         instructions.style.display = 'none';
         blocker.style.display = 'none';
+        removeBackButton(); // Remove back button when locking (or re-locking)
     });
 
     controls.addEventListener('unlock', function () {
         console.log("3D Controls Unlocked.");
-        blocker.style.display = 'flex'; // Show blocker when unlocked
-        instructions.style.display = '';
+        blocker.style.display = 'flex'; // Show blocker overlay
+        instructions.style.display = ''; // Show instructions text
+
+        // --- Add the "Back to Menu" button ---
+        removeBackButton(); // Remove any previous one first (safety check)
+
+        const backButton = document.createElement('button');
+        backButton.id = 'back-to-menu-button';
+        backButton.textContent = 'Back to Menu';
+        backButton.classList.add('enter-button'); // Apply the fancy style
+
+        // Add click listener for the back button
+        backButton.addEventListener('click', () => {
+            console.log("'Back to Menu' button clicked.");
+
+            if (showroomContainer) {
+                console.log("Hiding showroom...");
+                showroomContainer.style.display = 'none'; // Hide 3D view
+                // Optional: Could stop animation loop here too
+                // if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+            }
+            if (carouselContainer) {
+                console.log("Showing carousel...");
+                carouselContainer.classList.remove('hidden'); // Show carousel again
+            }
+            removeBackButton(); // Clean up the button itself
+        });
+
+        // Append the button inside the blocker
+        blocker.appendChild(backButton);
+        console.log("'Back to Menu' button added.");
+        // --- End of adding button ---
     });
 
-    // Input Listeners (These should only be active for the 3D view)
+    // Input Listeners
     const onKeyDown = function (event) {
         switch (event.code) {
             case 'ArrowUp': case 'KeyW': moveForward = true; break;
@@ -243,15 +287,13 @@ function initShowroom() {
     document.addEventListener('keyup', onKeyUp);
     console.log("initShowroom: Key listeners added.");
 
-
     // --- Simple Scene Content (Floor and Box) ---
     // Floor
     const floorGeometry = new THREE.PlaneGeometry(50, 50);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.9 });
-    // floorMaterial.receiveShadow = true; // Material doesn't have this property
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true; // Mesh object receives shadows
+    floor.receiveShadow = true;
     scene.add(floor);
 
     // Green Box at Origin
@@ -259,20 +301,18 @@ function initShowroom() {
     const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
     box.position.y = 0.5; // Sit on the floor
-    box.castShadow = true; // Let box cast shadows
+    box.castShadow = true;
     box.receiveShadow = true;
     scene.add(box);
     console.log("initShowroom: 3D floor and box added.");
 
-
-    // Add Resize Listener specific to the 3D view
+    // Add Resize Listener
     window.addEventListener('resize', onWindowResize);
 
     console.log("initShowroom: Initialization function finished. Starting animation loop...");
-    // Start the animation loop *after* initialization
+    // Start the animation loop
     animateShowroom();
 }
-
 function onWindowResize() {
     // Check if camera/renderer exist before resizing (might be called early)
     if (camera && renderer) {
