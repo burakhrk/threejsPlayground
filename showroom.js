@@ -271,7 +271,7 @@ function animateShowroom() {
         direction.x = Number(moveRight) - Number(moveLeft);
         if (direction.lengthSq() > 0) direction.normalize();
 
-        const speed = 20.0;
+        const speed = 35.0;
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
