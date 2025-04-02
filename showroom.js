@@ -16,6 +16,8 @@ let isShowroomInitialized = false; // Flag remains useful here
 let animationFrameId = null;
 let currentSceneId = null; // Track the active scene ID
 
+import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
+
 // --- DOM Element Selections ---
 console.log("Script start: Getting elements...");
 const carouselContainer = document.getElementById('carousel-container');
@@ -246,7 +248,6 @@ function initShowroom() {
     scene.add(directionalLight.target);
 
 
-    import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
 
     // Controls
