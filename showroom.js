@@ -1,7 +1,5 @@
-// showroom.js
-
 // --- Import Asset Loader ---
-// Ensure assetLoader.js exports these: loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig
+import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
 // --- Global Variables ---
 let camera, scene, renderer, controls;
@@ -12,13 +10,12 @@ let moveRight = false;
 const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const clock = new THREE.Clock();
-let isShowroomInitialized = false; // Flag remains useful here
+let isShowroomInitialized = false;
 let animationFrameId = null;
 let currentSceneId = null; // Track the active scene ID
 
-import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
-
 // --- DOM Element Selections ---
+// (Keep these as they are)
 console.log("Script start: Getting elements...");
 const carouselContainer = document.getElementById('carousel-container');
 const showroomContainer = document.getElementById('showroom-container');
@@ -26,11 +23,13 @@ const slider = document.getElementById('card-slider');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const enterButtons = document.querySelectorAll('.enter-button');
-const modelSidebar = document.getElementById('model-sidebar'); // Sidebar div
-const modelList = document.getElementById('model-list');       // List within sidebar
+const modelSidebar = document.getElementById('model-sidebar');
+const modelList = document.getElementById('model-list');
 
-// --- Carousel Logic (Keep as before) ---
-const numCards = 3;
+
+// --- Carousel Logic ---
+// (Keep this as it is)
+const numCards = 3; // Make sure this matches the number of cards in HTML
 const cardWidthPercentage = 100 / numCards;
 let currentCardIndex = 0;
 
@@ -39,7 +38,7 @@ function updateSliderPosition() {
     const offset = -currentCardIndex * cardWidthPercentage;
     slider.style.transform = `translateX(${offset}%)`;
     if (prevBtn) prevBtn.disabled = currentCardIndex === 0;
-    if (nextBtn) nextBtn.disabled = currentCardIndex === numCards - 1;
+    if (nextBtn) nextBtn.disabled = currentCardIndex === (document.querySelectorAll('#card-slider .card').length - 1); // Calculate dynamically
 }
 
 if (prevBtn) {
@@ -49,18 +48,20 @@ if (prevBtn) {
 }
 if (nextBtn) {
     nextBtn.addEventListener('click', () => {
-        if (currentCardIndex < numCards - 1) { currentCardIndex++; updateSliderPosition(); }
+        // Calculate max index dynamically
+        const maxIndex = document.querySelectorAll('#card-slider .card').length - 1;
+        if (currentCardIndex < maxIndex) { currentCardIndex++; updateSliderPosition(); }
     });
 }
 
-// Initialize slider
 if (slider && prevBtn && nextBtn) {
-    updateSliderPosition();
+    updateSliderPosition(); // Initialize slider
 } else {
     console.warn("Cannot initialize slider - elements missing.");
 }
 
-// --- Enter Button Logic (Updated for Sidebar & AssetLoader v2) ---
+// --- Enter Button Logic ---
+// (Keep this as it is - looks correct)
 if (enterButtons && enterButtons.length > 0) {
     console.log(`Found ${enterButtons.length} enter buttons. Attaching listeners...`);
     enterButtons.forEach((button, index) => {
@@ -76,38 +77,39 @@ if (enterButtons && enterButtons.length > 0) {
 
             carouselContainer.classList.add('hidden'); // Hide carousel
 
-            // Delay to allow fade-out and prevent heavy load during transition
             setTimeout(() => {
                 showroomContainer.style.display = 'block'; // Show 3D area
 
-                // Initialize base scene ONLY if it hasn't been done yet
                 if (!isShowroomInitialized) {
                     console.log("First entry: Initializing base showroom...");
                     try {
-                        initShowroom(); // Sets up scene, camera, renderer, lights, floor, controls
-                        isShowroomInitialized = true; // Mark as initialized
+                        initShowroom();
+                        isShowroomInitialized = true;
                     } catch (initError) {
                         console.error("FATAL ERROR during initShowroom():", initError);
-                        // Attempt recovery
                         showroomContainer.style.display = 'none';
                         carouselContainer.classList.remove('hidden');
-                        return; // Stop further execution for this click
+                        return;
                     }
                 } else {
                     console.log("Showroom already initialized. Preparing for new assets.");
+                    // Ensure renderer size is correct if window was resized while on carousel
+                    if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+                    if (camera) {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                    }
                 }
 
-                // --- Load Initial Assets and Populate Sidebar ---
-                if (scene) { // Ensure scene exists (should after init)
+                if (scene) {
                     console.log("Loading initial assets for scene:", sceneId);
-                    loadInitialAssets(sceneId, scene); // USE NEW FUNCTION from assetLoader
+                    loadInitialAssets(sceneId, scene);
 
                     console.log("Populating sidebar for scene:", sceneId);
-                    populateSidebar(sceneId); // Populate the sidebar
+                    populateSidebar(sceneId);
                 } else {
                     console.error("Scene object not available, cannot load assets or populate sidebar!");
                 }
-                // --- End AssetLoader & Sidebar Usage ---
 
             }, 500); // Match CSS transition time
         });
@@ -116,11 +118,10 @@ if (enterButtons && enterButtons.length > 0) {
     console.error("Could not find any 'enter-button' elements.");
 }
 
-
-// --- NEW: Sidebar Functions ---
-
-/** Populates the sidebar list based on the current sceneId */
+// --- Sidebar Functions ---
+// (Keep these as they are - logic seems correct)
 function populateSidebar(sceneId) {
+    // ... (keep existing implementation) ...
     if (!modelList || !showroomAssetConfig || !modelSidebar) {
         console.error("Sidebar elements or config missing.");
         return;
@@ -144,7 +145,10 @@ function populateSidebar(sceneId) {
     }
 
     // Find the initially loaded swappable model's URL (assume it's the first swappable in config)
+    // This relies on loadInitialAssets loading the first swappable it finds.
     const initialSwappableUrl = swappableItems.length > 0 ? swappableItems[0].url : null;
+    console.log("Sidebar: Initial swappable URL determined as:", initialSwappableUrl);
+
 
     swappableItems.forEach(itemConfig => {
         const li = document.createElement('li');
@@ -154,6 +158,7 @@ function populateSidebar(sceneId) {
 
         // Add 'active-model' class if this is the initially loaded one
         if (itemConfig.url === initialSwappableUrl) {
+            console.log(`Sidebar: Marking "${itemConfig.name}" as active initial model.`);
             button.classList.add('active-model');
         }
 
@@ -163,11 +168,16 @@ function populateSidebar(sceneId) {
         modelList.appendChild(li);
     });
 
-    modelSidebar.style.display = 'flex'; // Show the sidebar
+    // Only show sidebar if it was populated AND pointer is locked
+    if (controls && controls.isLocked) {
+        modelSidebar.style.display = 'flex'; // Show the sidebar
+    } else {
+        modelSidebar.style.display = 'none'; // Keep hidden if not locked
+    }
 }
 
-/** Handles clicks on sidebar item buttons */
 function handleSidebarClick(event) {
+    // ... (keep existing implementation) ...
     const button = event.currentTarget;
     const modelUrl = button.dataset.modelUrl;
 
@@ -191,8 +201,8 @@ function handleSidebarClick(event) {
     swapModel(modelUrl, currentSceneId, scene); // Use swapModel from assetLoader
 }
 
-/** Updates which button in the sidebar has the 'active-model' class */
 function updateSidebarActiveState(activeModelUrl) {
+    // ... (keep existing implementation) ...
     if (!modelList) return;
     const buttons = modelList.querySelectorAll('button');
     buttons.forEach(btn => {
@@ -204,8 +214,8 @@ function updateSidebarActiveState(activeModelUrl) {
     });
 }
 
-
-// --- 3D Showroom Initialization (BASE SETUP ONLY) ---
+// --- 3D Showroom Initialization ---
+// (Keep this as it is - looks correct, including lock/unlock logic)
 function initShowroom() {
     console.log("initShowroom: Setting up BASE scene elements...");
 
@@ -213,19 +223,22 @@ function initShowroom() {
     const blocker = document.getElementById('blocker');
     const instructions = document.getElementById('instructions');
 
+    // Check if crucial elements exist *within the container*
     if (!container || !blocker || !instructions) {
-        throw new Error("Crucial elements (container, blocker, instructions) missing for initShowroom!");
+        // Ensure the error points to the correct potential missing elements
+        console.error("Crucial elements missing for initShowroom. Check IDs: showroom-container, blocker, instructions.", { container, blocker, instructions });
+        throw new Error("Crucial elements missing for initShowroom!");
     }
 
     // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xdddddd);
-    scene.fog = new THREE.Fog(0xdddddd, 0, 75);
+    scene.fog = new THREE.Fog(0xdddddd, 10, 60); // Adjust fog distance if needed
 
     // Camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 1; // Resetting to standard eye-level based on previous context
-    camera.position.z = 5;
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100); // Adjusted far plane
+    camera.position.set(0, 1.6, 5); // Standard eye-level and distance
+
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -234,7 +247,8 @@ function initShowroom() {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
+    // IMPORTANT: Append renderer to the CORRECT container
+    container.appendChild(renderer.domElement); // Append canvas inside #showroom-container
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -242,19 +256,30 @@ function initShowroom() {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 10, 7.5);
     directionalLight.castShadow = true;
+    // Adjust shadow camera bounds if needed based on scene size
+    directionalLight.shadow.camera.top = 10;
+    directionalLight.shadow.camera.bottom = -10;
+    directionalLight.shadow.camera.left = -10;
+    directionalLight.shadow.camera.right = 10;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
     directionalLight.shadow.mapSize.width = 1024;
     directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
-    scene.add(directionalLight.target);
-
-
+    // Optional: Add a target for the light if needed, or let it point towards origin
+    // directionalLight.target.position.set(0, 0, 0);
+    // scene.add(directionalLight.target);
+    // const helper = new THREE.DirectionalLightHelper( directionalLight, 5 ); // Helper for debugging
+    // scene.add( helper );
+    // const shadowHelper = new THREE.CameraHelper( directionalLight.shadow.camera ); // Helper for debugging shadow bounds
+    // scene.add( shadowHelper );
 
 
     // Controls
     controls = new THREE.PointerLockControls(camera, document.body);
 
-    // --- Lock/Unlock/Back Button Logic (Updated for Sidebar & AssetLoader v2) ---
-    blocker.style.display = 'flex';
+    // --- Lock/Unlock/Back Button Logic ---
+    blocker.style.display = 'flex'; // Show blocker initially inside the container
     instructions.style.display = '';
 
     function removeBackButton() {
@@ -262,21 +287,29 @@ function initShowroom() {
         if (btn) btn.remove();
     }
 
-    instructions.addEventListener('click', () => { controls.lock(); });
+    instructions.addEventListener('click', () => {
+        console.log("Instructions clicked - locking controls.");
+        controls.lock();
+    });
 
     controls.addEventListener('lock', () => {
         console.log("Controls Locked.");
         instructions.style.display = 'none';
         blocker.style.display = 'none';
         removeBackButton();
-        if (modelSidebar) modelSidebar.style.display = 'flex'; // Show sidebar when locked
+        // Show sidebar only if it has content (populateSidebar handles this check)
+        if (modelList && modelList.children.length > 0) {
+            modelSidebar.style.display = 'flex';
+        } else {
+            modelSidebar.style.display = 'none';
+        }
     });
 
     controls.addEventListener('unlock', () => {
         console.log("Controls Unlocked.");
-        blocker.style.display = 'flex';
+        blocker.style.display = 'flex'; // Show blocker again
         instructions.style.display = '';
-        if (modelSidebar) modelSidebar.style.display = 'none'; // Hide sidebar when unlocked (menu showing)
+        if (modelSidebar) modelSidebar.style.display = 'none'; // Hide sidebar when unlocked
 
         removeBackButton(); // Ensure no duplicates
         const backButton = document.createElement('button');
@@ -284,30 +317,37 @@ function initShowroom() {
         backButton.textContent = 'Back to Menu';
         backButton.classList.add('enter-button'); // Use fancy style
 
-        backButton.addEventListener('click', () => {
+        backButton.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent blocker click if button is clicked
             console.log("'Back to Menu' button clicked.");
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId); // Stop animation loop if returning
+                animationFrameId = null;
+            }
+
             if (showroomContainer) showroomContainer.style.display = 'none';
             if (carouselContainer) carouselContainer.classList.remove('hidden');
 
-            // --- Use AssetLoader on Back & Clear Sidebar ---
             if (scene) {
                 console.log("Clearing all assets before returning to menu...");
-                clearAllAssets(scene); // USE clearAllAssets from assetLoader
+                clearAllAssets(scene);
             }
-            if (modelSidebar) modelSidebar.style.display = 'none'; // Explicitly hide sidebar
-            if (modelList) modelList.innerHTML = ''; // Clear list content
-            currentSceneId = null; // Reset scene ID tracker
-            // --- End Cleanup ---
+            if (modelSidebar) modelSidebar.style.display = 'none';
+            if (modelList) modelList.innerHTML = '';
+            currentSceneId = null;
 
             removeBackButton(); // Remove the button itself
+            // Reset movement keys just in case
+            moveForward = moveBackward = moveLeft = moveRight = false;
         });
-        blocker.appendChild(backButton);
+        blocker.appendChild(backButton); // Append button to blocker
         console.log("'Back to Menu' button added.");
     });
     // --- End Lock/Unlock ---
 
-    // Input Listeners (WASD)
-    const onKeyDown = (event) => { /* ... WASD logic ... */
+    // Input Listeners (WASD) - CORRECTED (removed comments)
+    const onKeyDown = (event) => {
         switch (event.code) {
             case 'ArrowUp': case 'KeyW': moveForward = true; break;
             case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
@@ -315,7 +355,7 @@ function initShowroom() {
             case 'ArrowRight': case 'KeyD': moveRight = true; break;
         }
     };
-    const onKeyUp = (event) => { /* ... WASD logic ... */
+    const onKeyUp = (event) => {
         switch (event.code) {
             case 'ArrowUp': case 'KeyW': moveForward = false; break;
             case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
@@ -338,14 +378,18 @@ function initShowroom() {
     // Resize Listener
     window.addEventListener('resize', onWindowResize);
 
-    // Start Animation Loop
-    animateShowroom();
+    // Start Animation Loop ONLY if not already running
+    if (!animationFrameId) {
+        animateShowroom();
+    }
+
 
     console.log("initShowroom: Base setup complete.");
 }
 
 
-// --- Window Resize Handler (Keep as before) ---
+// --- Window Resize Handler ---
+// (Keep as is)
 function onWindowResize() {
     if (camera && renderer) {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -354,9 +398,10 @@ function onWindowResize() {
     }
 }
 
-// --- Animation Loop (Keep as before) ---
+// --- Animation Loop ---
+// (Keep as is, but added floor constraint value check)
 function animateShowroom() {
-    animationFrameId = requestAnimationFrame(animateShowroom);
+    animationFrameId = requestAnimationFrame(animateShowroom); // Store the ID
     const delta = clock.getDelta();
 
     // Movement Logic
@@ -368,18 +413,19 @@ function animateShowroom() {
         direction.x = Number(moveRight) - Number(moveLeft);
         if (direction.lengthSq() > 0) direction.normalize();
 
-        const speed = 35.0; // Resetting speed to 20 based on previous context
+        const speed = 5.0; // Adjusted speed (was 35.0, maybe too fast?)
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
-        if (controls.moveRight) controls.moveRight(-velocity.x * delta);
-        if (controls.moveForward) controls.moveForward(-velocity.z * delta);
+        // Use controls methods for movement relative to view direction
+        controls.moveRight(-velocity.x * delta);
+        controls.moveForward(-velocity.z * delta);
 
-        // Floor constraint might need adjustment if camera Y changed significantly
-        const camObject = controls.getObject ? controls.getObject() : null;
-        if (camObject && camObject.position.y < 1) { // Using 1.6 for constraint
-            velocity.y = 0;
-            camObject.position.y = 1;
+        // Floor constraint - Check if camera.position.y matches initShowroom setting
+        const eyeLevel = 1.6; // Match camera's initial Y position
+        if (controls.getObject().position.y < eyeLevel) {
+            velocity.y = 0; // Prevent falling further
+            controls.getObject().position.y = eyeLevel; // Reset to eye level
         }
     }
 
