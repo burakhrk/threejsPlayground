@@ -8,16 +8,16 @@
         /* Basic Reset & Body */
         body {
             margin: 0;
-            overflow: hidden; /* Prevent body scrollbars */
+            overflow: hidden;
             font-family: sans-serif;
             background-color: #f0f0f0;
         }
 
         canvas {
-            display: block; /* Prevent extra space below canvas */
+            display: block;
         }
 
-        /* Carousel Styles (Keep existing) */
+        /* Carousel Styles */
         #carousel-container {
             position: fixed;
             top: 0;
@@ -55,12 +55,10 @@
 
         #card-slider {
             display: flex;
-            /* width is set dynamically by JS */
             transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .card {
-            /* flex-basis is set dynamically by JS */
             box-sizing: border-box;
             padding: 20px;
             margin: 0 10px;
@@ -96,7 +94,7 @@
                 flex-grow: 1;
             }
 
-        .enter-button { /* Style for card buttons AND back button */
+        .enter-button {
             padding: 12px 28px;
             border: none;
             border-radius: 25px;
@@ -158,26 +156,22 @@
             right: 75px;
         }
 
-        /* 3D Showroom Container Styles */
+        /* 3D Showroom Container */
         #showroom-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* display is controlled by JS */
         }
 
-        /* --- REMOVED Styles for #blocker, #instructions --- */
-
-        /* --- Style for new Permanent Back Button --- */
+        /* Permanent Back Button */
         #permanent-back-button {
-            position: fixed; /* Position relative to viewport */
+            position: fixed;
             top: 15px;
             left: 15px;
-            z-index: 30; /* High z-index to be above sidebar and canvas */
+            z-index: 30;
             padding: 8px 15px;
-            /* Using a grey variant of enter-button style */
             background: linear-gradient(to bottom, #6c757d 0%, #5a6268 100%);
             color: white;
             border: none;
@@ -188,7 +182,6 @@
             text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
             box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 3px 5px rgba(0, 0, 0, 0.2);
             transition: all 0.15s ease-out;
-            /* display: none; /* Controlled by JS */
         }
 
             #permanent-back-button:hover {
@@ -203,25 +196,22 @@
                 transform: translateY(0px);
             }
 
-        /* Sidebar Styles (Keep existing) */
+        /* Sidebar Styles */
         #model-sidebar {
             position: fixed;
             left: 15px;
-            top: 50%; /* Center vertically */
+            top: 50%;
             transform: translateY(-50%);
-            /* Consider adding margin-top if it overlaps back button: */
-            /* margin-top: 40px; */
             width: 180px;
             max-height: 60%;
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
             padding: 15px;
-            z-index: 20; /* Below back button, above canvas */
+            z-index: 20;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            /* display: none; /* Controlled by JS */
         }
 
             #model-sidebar h4 {
@@ -285,28 +275,26 @@
             <div id="card-slider">
                 <!-- Card 1 -->
                 <div class="card">
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Towels"> <!-- Placeholder path -->
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Towels">
                     <h3>Towels Collection</h3>
                     <p>Explore our premium range of soft and absorbent towels.</p>
                     <button class="enter-button" data-scene-id="towels">Enter</button>
                 </div>
                 <!-- Card 2 -->
                 <div class="card">
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes"> <!-- Placeholder path -->
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes">
                     <h3>Luxury Bathrobes</h3>
                     <p>Discover comfort and style with our elegant bathrobes.</p>
                     <button class="enter-button" data-scene-id="bathrobes">Enter</button>
                 </div>
                 <!-- Card 3 -->
                 <div class="card">
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Accessories"> <!-- Placeholder path -->
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Accessories">
                     <h3>Bath Accessories</h3>
                     <p>Complete your bathroom with our curated accessories.</p>
                     <button class="enter-button" data-scene-id="accessories">Enter</button>
                 </div>
-                <!-- Add more cards if needed -->
             </div>
-            <!-- Navigation Arrows -->
             <button id="prev-btn" class="nav-arrow"><</button>
             <button id="next-btn" class="nav-arrow">></button>
         </div>
@@ -314,31 +302,20 @@
 
     <!-- 3D Showroom Container -->
     <div id="showroom-container" style="display: none;">
-        <!-- Canvas will be added here by Three.js -->
-        <!-- NEW: Permanent Back Button (Placed inside showroom container) -->
+        <!-- Canvas added by JS -->
         <button id="permanent-back-button" style="display: none;">Back to Menu</button>
-
-        <!-- Model Selection Sidebar (Placed inside showroom container) -->
         <div id="model-sidebar" style="display: none;">
             <h4>Select Model</h4>
-            <ul id="model-list">
-                <!-- List items populated by JS -->
-            </ul>
+            <ul id="model-list"></ul>
         </div>
+    </div>
 
-        <!-- REMOVED: #blocker and #instructions divs are no longer used -->
-
-    </div> <!-- End showroom-container -->
     <!-- Scripts -->
-    <!-- THREE.js Core -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-    <!-- OrbitControls -->
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- GLTF Loader -->
     <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
-    <!-- Your Main script (ensure assetLoader.js is also served) -->
-    <script type="module" src="showroom.js" defer></script>
+    <script type="module" src="showroom.js" defer></script> <!-- Main Logic -->
+    <!-- assetLoader.js is imported by showroom.js -->
 
 </body>
 </html>
