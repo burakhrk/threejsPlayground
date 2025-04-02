@@ -301,7 +301,7 @@ function animateShowroom() {
         }
 
 
-        const speed = 20.0; // Adjusted speed might be needed
+        const speed = 35.0; // Adjusted speed might be needed
 
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
