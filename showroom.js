@@ -64,7 +64,7 @@ if (permanentBackButton) {
     });
 } else { console.error("Permanent back button not found!"); }
 
-// --- Enter Button Logic ---
+// --- Enter Button Logic --- (MODIFIED: Passes camera/controls to loadInitialAssets)
 if (enterButtons && enterButtons.length > 0) {
     enterButtons.forEach((button, index) => {
         button.addEventListener('click', () => {
@@ -86,30 +86,40 @@ if (enterButtons && enterButtons.length > 0) {
                         showroomContainer.style.display = 'none';
                         if (permanentBackButton) permanentBackButton.style.display = 'none';
                         carouselContainer.classList.remove('hidden');
-                        currentSceneId = null; return;
+                        currentSceneId = null;
+                        return; // Stop execution on init error
                     }
                 } else {
                     console.log("Showroom already initialized.");
                     onWindowResize(); // Ensure size is correct
-                    // Optional: Reset camera view on re-entry
-                    if (controls) {
-                        controls.reset(); // Resets OrbitControls state nicely
-                        camera.position.set(0, 1.6, 7); // Re-apply desired start position
-                        controls.target.set(0, 0.5, 0); // Re-apply desired target
-                        controls.update();
-                    }
+                    // --- REMOVED redundant camera reset ---
+                    // The camera/target is now set by loadInitialAssets
                 }
-                if (scene) {
-                    console.log("Loading assets for:", sceneId); loadInitialAssets(sceneId, scene);
-                    console.log("Populating sidebar for:", sceneId); populateSidebar(sceneId);
-                } else { console.error("Scene object not available!"); }
-                if (!animationFrameId) { console.log("Starting animation loop."); animateShowroom(); }
-            }, 500);
+
+                // *** ENSURE scene, camera, controls are ready BEFORE loading assets ***
+                if (scene && camera && controls) {
+                    console.log("Loading assets for:", sceneId);
+                    // *** MODIFIED CALL: Pass camera and controls ***
+                    loadInitialAssets(sceneId, scene, camera, controls);
+                    console.log("Populating sidebar for:", sceneId);
+                    populateSidebar(sceneId);
+                } else {
+                    console.error("Scene, Camera, or Controls object not available before loading assets!");
+                    // Consider showing an error to the user or returning to menu
+                    if (permanentBackButton) permanentBackButton.click(); // Go back if essentials are missing
+                    return;
+                }
+
+                if (!animationFrameId) {
+                    console.log("Starting animation loop.");
+                    animateShowroom();
+                }
+            }, 500); // Delay for transition
         });
     });
 } else { console.error("Could not find any '.enter-button' elements with 'data-scene-id'."); }
 
-// --- Sidebar Functions ---
+// --- Sidebar Functions --- (No changes needed here)
 function populateSidebar(sceneId) {
     console.log(`--- Populating sidebar for scene: ${sceneId} ---`);
     if (!modelList || !showroomAssetConfig || !modelSidebar) { console.error("Sidebar elements/config missing."); if (modelSidebar) modelSidebar.style.display = 'none'; return; }
@@ -138,20 +148,20 @@ function populateSidebar(sceneId) {
         modelSidebar.style.display = 'flex'; // Show sidebar
     }
 }
-function handleSidebarClick(event) { // No changes needed
+function handleSidebarClick(event) {
     const button = event.currentTarget; const modelUrl = button.dataset.modelUrl;
     if (!modelUrl || !currentSceneId || !scene) { console.error("Missing data for sidebar click"); return; }
     if (button.classList.contains('active-model')) { console.log("Sidebar click: Model already active."); return; }
     console.log(`Sidebar click: Requesting swap to ${modelUrl}`);
     updateSidebarActiveState(modelUrl); swapModel(modelUrl, currentSceneId, scene);
 }
-function updateSidebarActiveState(activeModelUrl) { // No changes needed
+function updateSidebarActiveState(activeModelUrl) {
     if (!modelList) return; const buttons = modelList.querySelectorAll('button');
     buttons.forEach(btn => { btn.classList.toggle('active-model', btn.dataset.modelUrl === activeModelUrl); });
     console.log(`Sidebar active state updated.`);
 }
 
-// --- 3D Showroom Initialization ---
+// --- 3D Showroom Initialization (MODIFIED: Adds Spacebar listener) ---
 function initShowroom() {
     console.log("initShowroom: Setting up BASE scene with OrbitControls...");
     const container = document.getElementById('showroom-container');
@@ -160,10 +170,11 @@ function initShowroom() {
     // Scene, Camera, Renderer, Lighting, Floor (Setup remains the same)
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeeeeee);
-    scene.fog = new THREE.Fog(0xeeeeee, 15, 70); // Adjusted fog slightly
+    scene.fog = new THREE.Fog(0xeeeeee, 15, 70);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.6, 7); // Start position
+    // Default start position - will be overridden by loadInitialAssets
+    camera.position.set(0, 1.6, 7);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -186,29 +197,49 @@ function initShowroom() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false; // Keep panning parallel to ground
-    controls.minDistance = 1; controls.maxDistance = 40; // Adjusted max distance
+    controls.minDistance = 1; controls.maxDistance = 40;
     controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent looking under floor
-    controls.target.set(0, 0.5, 0); // Initial look-at point
+    // Default target - will be overridden by loadInitialAssets
+    controls.target.set(0, 0.5, 0);
     controls.update();
 
-    // WASD Listeners (No changes needed)
+    // --- MODIFIED Key Listeners ---
     const onKeyDown = (event) => {
+        // Only process keys if the showroom is visible and active
+        if (showroomContainer.style.display !== 'block' || !currentSceneId) return;
+
         switch (event.code) {
-            case 'ArrowUp': case 'KeyW': moveForward = true; break; case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
-            case 'ArrowDown': case 'KeyS': moveBackward = true; break; case 'ArrowRight': case 'KeyD': moveRight = true; break;
+            case 'ArrowUp': case 'KeyW': moveForward = true; break;
+            case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+            case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+            case 'ArrowRight': case 'KeyD': moveRight = true; break;
+            // *** ADDED SPACEBAR CASE ***
+            case 'Space':
+                event.preventDefault(); // Important: Stop browser scroll/action on space
+                panVelocity.set(0, 0, 0); // Reset panning velocity immediately
+                console.log("Movement stopped via Spacebar.");
+                break;
         }
     };
     const onKeyUp = (event) => {
+        // Only process keys if the showroom is visible and active
+        if (showroomContainer.style.display !== 'block' || !currentSceneId) return;
+
         switch (event.code) {
-            case 'ArrowUp': case 'KeyW': moveForward = false; break; case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
-            case 'ArrowDown': case 'KeyS': moveBackward = false; break; case 'ArrowRight': case 'KeyD': moveRight = false; break;
+            case 'ArrowUp': case 'KeyW': moveForward = false; break;
+            case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+            case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+            case 'ArrowRight': case 'KeyD': moveRight = false; break;
+            // No action needed for Space key up
         }
     };
+    // Listen on the document level
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
+    // --- END MODIFIED Key Listeners ---
 
     // Floor (Setup remains the same)
-    const floorGeometry = new THREE.PlaneGeometry(60, 60); // Slightly larger floor
+    const floorGeometry = new THREE.PlaneGeometry(60, 60);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8, metalness: 0.2 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
@@ -217,17 +248,16 @@ function initShowroom() {
     console.log("initShowroom: Base setup complete.");
 }
 
-// --- Window Resize Handler ---
+// --- Window Resize Handler --- (No changes needed)
 function onWindowResize() {
     if (camera && renderer) {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        // console.log("Window resized."); // Optional log
     }
 }
 
-// --- Animation Loop (UPDATED Movement Logic) ---
+// --- Animation Loop --- (No changes needed here)
 const forwardVector = new THREE.Vector3(); // Reusable vectors for direction calculation
 const sideVector = new THREE.Vector3();
 const worldUp = new THREE.Vector3(0, 1, 0);
@@ -235,7 +265,7 @@ const panDelta = new THREE.Vector3(); // Calculated movement for this frame
 
 function animateShowroom() {
     animationFrameId = requestAnimationFrame(animateShowroom);
-    const delta = Math.min(clock.getDelta(), 0.1); // Get delta time, clamp to avoid large jumps
+    const delta = Math.min(clock.getDelta(), 0.1); // Get delta time, clamp
 
     // --- Calculate Desired Movement Direction ---
     let moveDirection = new THREE.Vector3(0, 0, 0);
@@ -250,18 +280,16 @@ function animateShowroom() {
         if (moveLeft) moveDirection.add(sideVector); // Use add for left (camera space)
         if (moveRight) moveDirection.sub(sideVector); // Use sub for right (camera space)
 
-        moveDirection.normalize(); // Ensure consistent speed regardless of direction count
+        moveDirection.normalize(); // Ensure consistent speed
     }
 
     // --- Apply Acceleration ---
-    if (moveDirection.lengthSq() > 0.1) { // If keys are pressed (check lengthSq for efficiency)
+    if (moveDirection.lengthSq() > 0.1) { // If keys are pressed
         panVelocity.add(moveDirection.multiplyScalar(PAN_ACCELERATION * delta));
     }
 
     // --- Apply Damping ---
-    // Calculate damping scale based on delta time
-    // Avoids damping being frame-rate dependent
-    const damping = Math.pow(PAN_DAMPING_FACTOR, delta); // Exponential decay
+    const damping = Math.pow(PAN_DAMPING_FACTOR, delta); // Time-corrected damping
     panVelocity.multiplyScalar(damping);
 
     // --- Stop Movement if Velocity is Low ---
@@ -278,7 +306,7 @@ function animateShowroom() {
 
     // --- Update OrbitControls ---
     if (controls) {
-        controls.update(); // Applies damping from controls internal state and mouse input
+        controls.update(); // Applies damping from controls internal state + mouse input
     }
 
     // --- Render ---
@@ -291,4 +319,4 @@ function animateShowroom() {
 }
 
 // --- Initial Script Load Message ---
-console.log("Showroom script loaded. OrbitControls, Smoother WASD Panning. Waiting for interaction.");
+console.log("Showroom script loaded. OrbitControls, Smoother WASD Panning, Spacebar Stop. Waiting for interaction.");

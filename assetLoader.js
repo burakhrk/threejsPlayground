@@ -70,16 +70,18 @@ function clearAllAssets(scene) {
 // --- *** MODIFIED loadInitialAssets Function *** ---
 /**
  * Loads ONLY the FIRST swappable asset found for the given sceneId.
- * Does NOT load static assets or other swappable assets initially.
+ * Sets the camera to view this initial asset more closely.
  * @param {string} sceneId
  * @param {THREE.Scene} scene
+ * @param {THREE.PerspectiveCamera} camera - The main camera
+ * @param {THREE.OrbitControls} controls - The orbit controls instance
  */
-function loadInitialAssets(sceneId, scene) {
-    if (!scene) {
-        console.error("AssetLoader: Scene required for loadInitialAssets.");
+function loadInitialAssets(sceneId, scene, camera, controls) { // <-- Added camera, controls
+    if (!scene || !camera || !controls) { // <-- Added checks
+        console.error("AssetLoader: Scene, Camera, and Controls required for loadInitialAssets.");
         return;
     }
-    clearAllAssets(scene); // Ensure clean state (removes previous model if any)
+    clearAllAssets(scene); // Ensure clean state
 
     const assetsInCategory = showroomAssetConfig[sceneId];
     if (!assetsInCategory || assetsInCategory.length === 0) {
@@ -87,7 +89,6 @@ function loadInitialAssets(sceneId, scene) {
         return;
     }
 
-    // Find the very first item marked as swappable in this category
     const initialSwappableConfig = assetsInCategory.find(config => config.swappable === true);
 
     if (initialSwappableConfig) {
@@ -98,20 +99,41 @@ function loadInitialAssets(sceneId, scene) {
             (gltf) => { // onLoad
                 const model = gltf.scene;
                 console.log(`AssetLoader: Loaded initial model "${initialSwappableConfig.name}" (${initialSwappableConfig.url})`);
-                applyConfigToModel(model, initialSwappableConfig); // Apply position, scale etc.
+                applyConfigToModel(model, initialSwappableConfig);
                 scene.add(model);
 
-                // Update the state to track the loaded model
                 currentSwappableModel.model = model;
                 currentSwappableModel.configUrl = initialSwappableConfig.url;
                 console.log(`AssetLoader: Initial swappable model set: ${initialSwappableConfig.name}`);
 
-                // IMPORTANT: We do NOT continue loading other assets here.
+                // --- START: Set Initial Camera View ---
+                const modelPos = initialSwappableConfig.position; // e.g., [1.5, 0, 0]
+                const targetYOffset = 0.6; // Look slightly above the model's base position
+                const cameraDistance = 2.0; // How far back the camera should be
+                const cameraHeightOffset = 1.0; // How much higher the camera should be than the target
+
+                // Set the point OrbitControls looks at
+                controls.target.set(
+                    modelPos[0],
+                    modelPos[1] + targetYOffset,
+                    modelPos[2]
+                );
+
+                // Set the camera's position relative to the model
+                camera.position.set(
+                    modelPos[0],                         // Same X as model
+                    modelPos[1] + cameraHeightOffset,    // Higher Y than model base
+                    modelPos[2] + cameraDistance         // Z position behind the model
+                );
+
+                controls.update(); // IMPORTANT: Apply the new target and position
+                console.log(`AssetLoader: Camera position adjusted for initial model.`);
+                // --- END: Set Initial Camera View ---
+
             },
             undefined, // onProgress
             (error) => {
                 console.error(`AssetLoader: ERROR loading initial swappable model "${initialSwappableConfig.name}" (${initialSwappableConfig.url}):`, error);
-                // Ensure state is clear if loading failed
                 currentSwappableModel.model = null;
                 currentSwappableModel.configUrl = null;
             }
@@ -158,31 +180,4 @@ function swapModel(newModelConfigUrl, sceneId, scene) {
         newModelConfig.url,
         (gltf) => { // onLoad
             const newModel = gltf.scene;
-            console.log(`AssetLoader: Loaded new swappable model "${newModelConfig.name}"`);
-            applyConfigToModel(newModel, newModelConfig);
-            scene.add(newModel);
-            currentSwappableModel.model = newModel; // Update state
-            currentSwappableModel.configUrl = newModelConfig.url;
-            console.log(`AssetLoader: Swap complete.`);
-        },
-        undefined, // onProgress
-        (error) => { console.error(`AssetLoader: ERROR loading swap model "${newModelConfig.name}" (${newModelConfig.url}):`, error); }
-    );
-}
-
-/** Helper to apply position/scale/rotation/shadows from config */
-function applyConfigToModel(model, config) {
-    // --- This function remains unchanged ---
-    if (config.position) model.position.set(...config.position);
-    if (config.scale) model.scale.set(...config.scale);
-    if (config.rotationY !== undefined) model.rotation.y = config.rotationY;
-    model.traverse(node => {
-        if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-        }
-    });
-}
-
-// Export necessary functions and data
-export { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig };
+            console.log(`AssetLoader: Loaded new swappable model "${newModelConfig.
