@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\assetLoader.js||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:assetLoader.js||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\showroom.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:showroom.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
@@ -31,25 +35,38 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "assetLoader.js",
+              "DocumentMoniker": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\assetLoader.js",
+              "RelativeDocumentMoniker": "assetLoader.js",
+              "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\assetLoader.js",
+              "RelativeToolTip": "assetLoader.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-04-02T10:46:01.342Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "showroom.js",
               "DocumentMoniker": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\showroom.js",
               "RelativeDocumentMoniker": "showroom.js",
               "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\showroom.js",
               "RelativeToolTip": "showroom.js",
-              "ViewState": "AgIAAC8BAAAAAAAAAAAAwDcBAAA2AAAAAAAAAA==",
+              "ViewState": "AgIAALYBAAAAAAAAAAAAALYBAABJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-04-02T09:39:39.955Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "index.html",
               "DocumentMoniker": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\index.html",
               "RelativeDocumentMoniker": "index.html",
               "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\index.html",
               "RelativeToolTip": "index.html",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFkBAAAAAAAAAAAUwHUBAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2025-04-02T09:39:28.412Z",
               "EditorCaption": ""

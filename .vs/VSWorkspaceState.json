@@ -1,9 +1,10 @@
 {
   "ExpandedNodes": [
     "",
+    "\\models",
     "\\textures",
     "\\textures\\icons"
   ],
-  "SelectedNode": "\\showroom.js",
+  "SelectedNode": "\\models\\towels.glb",
   "PreviewInSolutionExplorer": false
 }
