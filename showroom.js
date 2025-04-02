@@ -11,7 +11,7 @@ let currentSceneId = null;
 
 // --- Movement Variables (Smoother Panning) ---
 const panVelocity = new THREE.Vector3(); // Current panning speed vector
-const PAN_ACCELERATION = 35.0;           // Units per second^2 - How fast panning speeds up
+const PAN_ACCELERATION = 15.0;           // Units per second^2 - How fast panning speeds up
 const PAN_DAMPING_FACTOR = 0.90;         // Multiplier per second - lower values stop faster (e.g., 0.8 stops faster than 0.95)
 const MIN_PAN_SPEED = 0.01;              // Speed below which velocity is zeroed out
 
