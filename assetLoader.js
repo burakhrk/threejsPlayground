@@ -76,8 +76,8 @@ function clearAllAssets(scene) {
  * @param {THREE.PerspectiveCamera} camera - The main camera
  * @param {THREE.OrbitControls} controls - The orbit controls instance
  */
-function loadInitialAssets(sceneId, scene, camera, controls) { // <-- Added camera, controls
-    if (!scene || !camera || !controls) { // <-- Added checks
+function loadInitialAssets(sceneId, scene, camera, controls) {
+    if (!scene || !camera || !controls) {
         console.error("AssetLoader: Scene, Camera, and Controls required for loadInitialAssets.");
         return;
     }
@@ -108,9 +108,9 @@ function loadInitialAssets(sceneId, scene, camera, controls) { // <-- Added came
 
                 // --- START: Set Initial Camera View ---
                 const modelPos = initialSwappableConfig.position; // e.g., [1.5, 0, 0]
-                const targetYOffset = 0.6; // Look slightly above the model's base position
-                const cameraDistance = 2.0; // How far back the camera should be
-                const cameraHeightOffset = 1.0; // How much higher the camera should be than the target
+                const targetYOffset = 0.6; // Tune this: Look slightly above the model's base position
+                const cameraDistance = 2.0; // Tune this: How far back the camera should be
+                const cameraHeightOffset = 1.0; // Tune this: How much higher the camera should be than the target
 
                 // Set the point OrbitControls looks at
                 controls.target.set(
@@ -135,7 +135,7 @@ function loadInitialAssets(sceneId, scene, camera, controls) { // <-- Added came
             (error) => {
                 console.error(`AssetLoader: ERROR loading initial swappable model "${initialSwappableConfig.name}" (${initialSwappableConfig.url}):`, error);
                 currentSwappableModel.model = null;
-                currentSwappableModel.configUrl = null;
+                currentSwappableConfig.configUrl = null; // Corrected variable name
             }
         );
 
@@ -144,17 +144,19 @@ function loadInitialAssets(sceneId, scene, camera, controls) { // <-- Added came
         // Ensure state is clear if nothing was found to load
         currentSwappableModel.model = null;
         currentSwappableModel.configUrl = null;
+        // Optional: Reset camera to default view if nothing loads
+        // camera.position.set(0, 1.6, 7);
+        // controls.target.set(0, 0.5, 0);
+        // controls.update();
     }
 
     // Static assets (swappable: false) and other swappable assets are intentionally NOT loaded by this function.
-    // The otherLoadedAssets array will remain empty unless static items are loaded via a different mechanism.
 }
 // --- *** END MODIFIED loadInitialAssets Function *** ---
 
 
 /** Swaps the current swappable model with a new one (loads on demand). */
 function swapModel(newModelConfigUrl, sceneId, scene) {
-    // --- This function remains unchanged ---
     if (!scene) { console.error("AssetLoader: Scene required for swapModel."); return; }
     if (currentSwappableModel.configUrl === newModelConfigUrl) { console.log("AssetLoader: Model already displayed."); return; }
 
@@ -180,4 +182,40 @@ function swapModel(newModelConfigUrl, sceneId, scene) {
         newModelConfig.url,
         (gltf) => { // onLoad
             const newModel = gltf.scene;
-            console.log(`AssetLoader: Loaded new swappable model "${newModelConfig.
+            console.log(`AssetLoader: Loaded new swappable model "${newModelConfig.name}"`);
+            applyConfigToModel(newModel, newModelConfig);
+            scene.add(newModel);
+            currentSwappableModel.model = newModel; // Update state
+            currentSwappableModel.configUrl = newModelConfig.url;
+            console.log(`AssetLoader: Swap complete.`);
+            // Optional: Reset camera view on swap?
+            // If you want the camera to reset to the new model's position on swap,
+            // you would need to pass camera & controls to swapModel and add similar
+            // logic here as in loadInitialAssets's onLoad callback.
+        },
+        undefined, // onProgress
+        (error) => {
+            console.error(`AssetLoader: ERROR loading swap model "${newModelConfig.name}" (${newModelConfig.url}):`, error);
+            // Consider how to handle swap failure - maybe try reloading the previous model?
+            // For now, just log the error. The scene might be empty.
+            currentSwappableModel.model = null;
+            currentSwappableModel.configUrl = null;
+        }
+    ); // <<-- This closing parenthesis was missing before
+} // <<-- This closing brace was missing before
+
+/** Helper to apply position/scale/rotation/shadows from config */
+function applyConfigToModel(model, config) {
+    if (config.position) model.position.set(...config.position);
+    if (config.scale) model.scale.set(...config.scale);
+    if (config.rotationY !== undefined) model.rotation.y = config.rotationY;
+    model.traverse(node => {
+        if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+        }
+    });
+} // <<-- This closing brace was missing before
+
+// Export necessary functions and data
+export { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig }; // <<-- This export line was missing before
