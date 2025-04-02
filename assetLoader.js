@@ -8,22 +8,22 @@ const gltfLoader = new THREE.GLTFLoader();
 // 'swappable: true' marks the primary model type to be exchanged
 const showroomAssetConfig = {
     towels: [
-        { name: 'Basic Towel Rack', url: 'models/towel_rack.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
-        { name: 'Towel Stack', url: 'models/towel_stack.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false }, // Example static prop
+        { name: 'Basic Towel Rack', url: 'models/hand_towel.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+        { name: 'Towel Stack', url: 'models/hanging_towel.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false }, // Example static prop
         // Add other swappable towel models here... (ensure only one type has swappable:true initially per category if needed)
     ],
     bathrobes: [
         { name: 'White Cotton Robe', url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true },
-        { name: 'Fancy Robe Stand', url: 'models/robe_stand.glb', position: [-2.5, 0, 1], scale: [1, 1, 1], swappable: false }, // Example static prop
+        { name: 'Fancy Robe Stand', url: 'models/towels.glb', position: [-2.5, 0, 1], scale: [1, 1, 1], swappable: false }, // Example static prop
         // Add other swappable bathrobe models here
-        { name: 'Blue Silk Robe', url: 'models/bathrobe_blue_silk.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true },
-        { name: 'Hooded Terry Robe', url: 'models/bathrobe_hooded.glb', position: [-1.5, 0.8, 1], scale: [0.65, 0.65, 0.65], rotationY: Math.PI / 4, swappable: true },
+        { name: 'Blue Silk Robe', url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true },
+        { name: 'Hooded Terry Robe', url: 'models/hanging_towel.glb', position: [-1.5, 0.8, 1], scale: [0.65, 0.65, 0.65], rotationY: Math.PI / 4, swappable: true },
     ],
     accessories: [
-        { name: 'Simple Soap Dish', url: 'models/soap_dish.glb', position: [0, 0.9, -1], scale: [0.3, 0.3, 0.3], swappable: true },
+        { name: 'Simple Soap Dish', url: 'models/bathrobe.glb', position: [0, 0.9, -1], scale: [0.3, 0.3, 0.3], swappable: true },
         // Add other swappable accessories here
-        { name: 'Bath Mat', url: 'models/bath_mat.glb', position: [0, 0.01, -0.5], scale: [1, 1, 1], swappable: false },
-        { name: 'Lotion Dispenser', url: 'models/lotion_dispenser.glb', position: [0.5, 0.9, -1], scale: [0.2, 0.2, 0.2], swappable: true },
+        { name: 'Bath Mat', url: 'models/towels.glb', position: [0, 0.01, -0.5], scale: [1, 1, 1], swappable: false },
+        { name: 'Lotion Dispenser', url: 'models/towels.glb', position: [0.5, 0.9, -1], scale: [0.2, 0.2, 0.2], swappable: true },
     ]
 };
 
