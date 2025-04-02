@@ -238,20 +238,20 @@
                 </div>
                 <!-- Card 2 -->
                 <div class="card">
-                     <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes"> <!-- Placeholder path -->
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes"> <!-- Placeholder path -->
                     <h3>Luxury Bathrobes</h3>
                     <p>Discover comfort and style with our elegant bathrobes.</p>
                     <button class="enter-button" data-scene-id="bathrobes">Enter</button>
                 </div>
                 <!-- Card 3 -->
                 <div class="card">
-                     <img src="/textures/icons/bathrobe_icon.png" alt="Accessories"> <!-- Placeholder path -->
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Accessories"> <!-- Placeholder path -->
                     <h3>Bath Accessories</h3>
                     <p>Complete your bathroom with our curated accessories.</p>
                     <button class="enter-button" data-scene-id="accessories">Enter</button>
                 </div>
             </div>
-             <!-- Navigation Arrows -->
+            <!-- Navigation Arrows -->
             <button id="prev-btn" class="nav-arrow" disabled><</button>
             <button id="next-btn" class="nav-arrow">></button>
         </div>
@@ -260,7 +260,8 @@
     <!-- 3D Showroom Container (Initially Hidden) -->
     <div id="showroom-container">
         <!-- Canvas will be added here by Three.js -->
-         <div id="blocker"> <!-- Blocker now inside showroom container -->
+        <div id="blocker">
+            <!-- Blocker now inside showroom container -->
             <div id="instructions">
                 Click to Explore<br>(WASD to move, Mouse to look)
             </div>
@@ -270,8 +271,15 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
     <!-- Main script -->
-<script src="showroom.js" defer></script>
+    <script src="showroom.js" defer></script>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <!-- Add GLTFLoader -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Your Main script -->
+     <script type="module" src="showroom.js" defer></script>
 
 </body>
 </html>
