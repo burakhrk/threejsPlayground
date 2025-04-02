@@ -206,7 +206,6 @@ function updateSidebarActiveState(activeModelUrl) {
 // --- 3D Showroom Initialization (BASE SETUP ONLY) ---
 function initShowroom() {
     console.log("initShowroom: Setting up BASE scene elements...");
-    import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
     const container = document.getElementById('showroom-container');
     const blocker = document.getElementById('blocker');
@@ -245,6 +244,10 @@ function initShowroom() {
     directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
     scene.add(directionalLight.target);
+
+
+    import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
+
 
     // Controls
     controls = new THREE.PointerLockControls(camera, document.body);
