@@ -49,15 +49,15 @@ function loadAssets(sceneId, scene) {
     // You could move this to a separate config object/file for even more cleanliness
     const assetConfigs = {
         towels: [
-            { url: 'models/bathrobe.glb', position: [1.5, 0, 0], scale: [1, 1, 1], rotationY: 0 }
+            { url: 'models/bathrobe.glb', position: [-5, 0, 0], scale: [1, 1, 1], rotationY: 0 }
             // Add more assets for 'towels' here
         ],
         bathrobes: [
-            { url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [1,1, 1], rotationY: Math.PI / 4 }
+            { url: 'models/bathrobe.glb', position: [0,0, 1], scale: [1,1, 1], rotationY: Math.PI / 4 }
             // Add more assets for 'bathrobes' here
         ],
         accessories: [
-            { url: 'models/bathrobe.glb', position: [0, 0.9, -1], scale: [1, 1, 1], rotationY: 0 }
+            { url: 'models/bathrobe.glb', position: [5, 0, -1], scale: [1, 1, 1], rotationY: 0 }
             // Add more assets for 'accessories' here
         ]
     };
