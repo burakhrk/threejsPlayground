@@ -5,132 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textile Showroom - Select</title>
     <style>
-        #model-sidebar {
-            position: fixed; /* Position relative to the viewport */
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%); /* Center vertically */
-            width: 180px; /* Adjust width as needed */
-            max-height: 60%; /* Limit height */
-            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            z-index: 20; /* Above canvas, potentially above blocker when unlocked */
-            overflow-y: auto; /* Add scroll if list is long */
-            display: flex; /* Use flex for internal layout */
-            flex-direction: column; /* Stack title and list */
-            /* display: none; is set inline initially, JS controls visibility */
-        }
-
-            #model-sidebar h4 {
-                margin-top: 0;
-                margin-bottom: 10px;
-                color: #333;
-                text-align: center;
-                border-bottom: 1px solid #ccc;
-                padding-bottom: 8px;
-            }
-
-        #model-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-grow: 1; /* Allow list to take remaining space */
-            overflow-y: auto; /* Ensure list itself scrolls if needed */
-        }
-
-            #model-list li {
-                margin-bottom: 8px;
-            }
-
-            #model-list button {
-                /* Basic button reset */
-                background: none;
-                border: 1px solid #ccc;
-                padding: 8px 10px;
-                width: 100%;
-                text-align: left;
-                cursor: pointer;
-                border-radius: 5px;
-                font-size: 0.9em;
-                color: #444;
-                transition: background-color 0.2s ease, border-color 0.2s ease;
-                display: block; /* Ensure it takes full width */
-            }
-
-                #model-list button:hover {
-                    background-color: #eee;
-                    border-color: #aaa;
-                }
-
-                #model-list button:active {
-                    background-color: #ddd;
-                }
-
-                /* Style for the currently active model in the list */
-                #model-list button.active-model {
-                    background-color: #007bff; /* Example active color */
-                    color: white;
-                    border-color: #0056b3;
-                    font-weight: bold;
-                }
-
-        /* --- End Added Styles --- */
-
-        /* Adjust existing blocker z-index if necessary to ensure sidebar is above */
-        #blocker {
-            /* ... other styles ... */
-            z-index: 5; /* Make sure this is lower than #model-sidebar's z-index (20) */
-        }
-
-
+        /* Basic Reset & Body */
         body {
             margin: 0;
             overflow: hidden; /* Prevent body scrollbars */
             font-family: sans-serif;
-            background-color: #f0f0f0; /* Background for the page */
+            background-color: #f0f0f0;
         }
 
-        #blocker {
-            position: absolute;
-            top: 0; /* Ensure blocker covers entire container */
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex; /* Use flex directly */
-            justify-content: center;
-            align-items: center;
-            flex-direction: column; /* Stack instructions and button vertically */
-            z-index: 5; /* Above canvas, below carousel, below sidebar when unlocked */
+        canvas {
+            display: block; /* Prevent extra space below canvas */
         }
 
-        #back-to-menu-button {
-            margin-top: 25px; /* Add some space above the button */
-            position: relative; /* Keep it in the flex flow */
-            z-index: 6; /* Ensure it's clickable above blocker background */
-        }
-        /* Carousel Styles */
+        /* Carousel Styles (Keep existing) */
         #carousel-container {
-            position: fixed; /* Take up full screen */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, #e0e0e0, #ffffff); /* Subtle gradient background */
+            background: linear-gradient(to bottom, #e0e0e0, #ffffff);
             display: flex;
-            flex-direction: column; /* Stack title and slider */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 10; /* Make sure it's above the (initially hidden) 3D view */
+            z-index: 10;
             opacity: 1;
-            transition: opacity 0.5s ease-out; /* Fade out transition */
+            transition: opacity 0.5s ease-out;
         }
 
             #carousel-container.hidden {
                 opacity: 0;
-                pointer-events: none; /* Prevent interaction when hidden */
+                pointer-events: none;
             }
 
         #carousel-title {
@@ -141,24 +47,23 @@
         }
 
         #slider-viewport {
-            width: 80%; /* Adjust width as needed */
-            max-width: 1000px; /* Max width for larger screens */
-            overflow: hidden; /* Crucial: Hides non-visible cards */
-            position: relative; /* For positioning arrows */
+            width: 80%;
+            max-width: 1000px;
+            overflow: hidden;
+            position: relative;
         }
 
         #card-slider {
             display: flex;
-            /* Width calculation: (Number of cards) * 100% */
-            width: 300%; /* For 3 cards */
-            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth slide */
+            /* width is set dynamically by JS */
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .card {
-            flex: 0 0 calc(100% / 3); /* Each card takes 1/3rd of the slider width */
-            box-sizing: border-box; /* Include padding in width calculation */
+            /* flex-basis is set dynamically by JS */
+            box-sizing: border-box;
             padding: 20px;
-            margin: 0 10px; /* Spacing between cards */
+            margin: 0 10px;
             background-color: #fff;
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -170,12 +75,12 @@
 
             .card img {
                 width: 80%;
-                max-width: 200px; /* Limit image size */
+                max-width: 200px;
                 height: auto;
                 border-radius: 10px;
                 margin-bottom: 15px;
-                object-fit: cover; /* Ensure image covers space nicely */
-                aspect-ratio: 1 / 1; /* Make images square */
+                object-fit: cover;
+                aspect-ratio: 1 / 1;
             }
 
             .card h3 {
@@ -188,59 +93,37 @@
                 font-size: 0.9em;
                 color: #666;
                 margin-bottom: 20px;
-                flex-grow: 1; /* Push button to bottom */
+                flex-grow: 1;
             }
 
-        .enter-button {
-            /* Keep existing layout properties */
-            padding: 12px 28px; /* Slightly larger */
-            border: none; /* Crucial for clean look */
-            border-radius: 25px; /* Slightly more rounded */
+        .enter-button { /* Style for card buttons AND back button */
+            padding: 12px 28px;
+            border: none;
+            border-radius: 25px;
             cursor: pointer;
             font-size: 1em;
-            font-weight: bold; /* Bolder text */
+            font-weight: bold;
             color: white;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); /* Subtle text shadow */
-            letter-spacing: 0.5px; /* Slightly wider text */
-            /* --- 3D & Fancy Styling --- */
-            /* Gradient Background */
-            background: linear-gradient(to bottom, #2f9cff 0%, #007bff 100%); /* Blue gradient */
-            /* Multiple Shadows for Depth */
-            box-shadow:
-            /* Inner highlight (subtle top bevel) */
-            inset 0 1px 1px rgba(255, 255, 255, 0.3),
-            /* Inner shadow (subtle bottom/side depth) */
-            inset 0 -1px 1px rgba(0, 0, 0, 0.1),
-            /* Main outer shadow (makes it "pop") */
-            0 5px 8px rgba(0, 0, 0, 0.25);
-            /* Smooth Transitions */
-            transition: all 0.15s ease-out; /* Faster transition for snappy feel */
-            outline: none; /* Remove default browser focus outline */
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+            letter-spacing: 0.5px;
+            background: linear-gradient(to bottom, #2f9cff 0%, #007bff 100%);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 5px 8px rgba(0, 0, 0, 0.25);
+            transition: all 0.15s ease-out;
+            outline: none;
         }
 
             .enter-button:hover {
-                /* Slightly brighter gradient on hover */
                 background: linear-gradient(to bottom, #4db2ff 0%, #1a8cff 100%);
-                /* Lift the button and increase shadow */
-                box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 8px 15px rgba(0, 0, 0, 0.3); /* Larger shadow */
-                transform: translateY(-2px); /* Move button up slightly */
+                box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 8px 15px rgba(0, 0, 0, 0.3);
+                transform: translateY(-2px);
             }
 
             .enter-button:active {
-                /* Darker gradient when pressed */
                 background: linear-gradient(to bottom, #007bff 0%, #0056b3 100%);
-                /* Simulate pressing down */
-                box-shadow:
-                /* Stronger inner shadow for pressed effect */
-                inset 0 2px 3px rgba(0, 0, 0, 0.2),
-                /* Much smaller outer shadow */
-                0 2px 4px rgba(0, 0, 0, 0.2);
-                transform: translateY(1px); /* Move button down slightly */
-                /* Optional: Slightly scale down */
-                /* transform: translateY(1px) scale(0.98); */
+                box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.2);
+                transform: translateY(1px);
             }
 
-        /* Navigation Arrows */
         .nav-arrow {
             position: absolute;
             top: 50%;
@@ -254,7 +137,7 @@
             font-size: 24px;
             cursor: pointer;
             z-index: 15;
-            line-height: 40px; /* Center symbol vertically */
+            line-height: 40px;
             text-align: center;
         }
 
@@ -275,36 +158,122 @@
             right: 75px;
         }
 
-
-        /* 3D Showroom Container Styles (Initially Hidden) */
+        /* 3D Showroom Container Styles */
         #showroom-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            display: none; /* Hidden by default, JS makes it block */
+            /* display is controlled by JS */
         }
 
-        /* Instructions specific styling */
-        #instructions {
-            width: 50%;
-            max-width: 300px;
+        /* --- REMOVED Styles for #blocker, #instructions --- */
+
+        /* --- Style for new Permanent Back Button --- */
+        #permanent-back-button {
+            position: fixed; /* Position relative to viewport */
+            top: 15px;
+            left: 15px;
+            z-index: 30; /* High z-index to be above sidebar and canvas */
+            padding: 8px 15px;
+            /* Using a grey variant of enter-button style */
+            background: linear-gradient(to bottom, #6c757d 0%, #5a6268 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
             cursor: pointer;
-            padding: 20px;
-            background-color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 3px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.15s ease-out;
+            /* display: none; /* Controlled by JS */
+        }
+
+            #permanent-back-button:hover {
+                background: linear-gradient(to bottom, #868e96 0%, #6c757d 100%);
+                box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.1), 0 5px 8px rgba(0, 0, 0, 0.25);
+                transform: translateY(-1px);
+            }
+
+            #permanent-back-button:active {
+                background: linear-gradient(to bottom, #5a6268 0%, #495057 100%);
+                box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.2);
+                transform: translateY(0px);
+            }
+
+        /* Sidebar Styles (Keep existing) */
+        #model-sidebar {
+            position: fixed;
+            left: 15px;
+            top: 50%; /* Center vertically */
+            transform: translateY(-50%);
+            /* Consider adding margin-top if it overlaps back button: */
+            /* margin-top: 40px; */
+            width: 180px;
+            max-height: 60%;
+            background-color: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
-            text-align: center;
-            font-family: sans-serif;
-            font-size: 1.2em;
-            color: #333;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            z-index: 20; /* Below back button, above canvas */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            /* display: none; /* Controlled by JS */
         }
 
-        canvas {
-            display: block;
-        }
-        /* Ensure canvas takes up space */
+            #model-sidebar h4 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #333;
+                text-align: center;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 8px;
+            }
 
+        #model-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+            #model-list li {
+                margin-bottom: 8px;
+            }
+
+            #model-list button {
+                background: none;
+                border: 1px solid #ccc;
+                padding: 8px 10px;
+                width: 100%;
+                text-align: left;
+                cursor: pointer;
+                border-radius: 5px;
+                font-size: 0.9em;
+                color: #444;
+                transition: background-color 0.2s ease, border-color 0.2s ease;
+                display: block;
+            }
+
+                #model-list button:hover {
+                    background-color: #eee;
+                    border-color: #aaa;
+                }
+
+                #model-list button:active {
+                    background-color: #ddd;
+                }
+
+                #model-list button.active-model {
+                    background-color: #007bff;
+                    color: white;
+                    border-color: #0056b3;
+                    font-weight: bold;
+                }
     </style>
 </head>
 <body>
@@ -316,63 +285,55 @@
             <div id="card-slider">
                 <!-- Card 1 -->
                 <div class="card">
-                    <!-- IMPORTANT: Make sure this path is correct -->
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Towels">
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Towels"> <!-- Placeholder path -->
                     <h3>Towels Collection</h3>
                     <p>Explore our premium range of soft and absorbent towels.</p>
                     <button class="enter-button" data-scene-id="towels">Enter</button>
                 </div>
                 <!-- Card 2 -->
                 <div class="card">
-                    <!-- IMPORTANT: Make sure this path is correct -->
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes">
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Bathrobes"> <!-- Placeholder path -->
                     <h3>Luxury Bathrobes</h3>
                     <p>Discover comfort and style with our elegant bathrobes.</p>
                     <button class="enter-button" data-scene-id="bathrobes">Enter</button>
                 </div>
                 <!-- Card 3 -->
                 <div class="card">
-                    <!-- IMPORTANT: Make sure this path is correct -->
-                    <img src="/textures/icons/bathrobe_icon.png" alt="Accessories">
+                    <img src="/textures/icons/bathrobe_icon.png" alt="Accessories"> <!-- Placeholder path -->
                     <h3>Bath Accessories</h3>
                     <p>Complete your bathroom with our curated accessories.</p>
                     <button class="enter-button" data-scene-id="accessories">Enter</button>
                 </div>
+                <!-- Add more cards if needed -->
             </div>
             <!-- Navigation Arrows -->
-            <button id="prev-btn" class="nav-arrow" disabled><</button> <!-- Use < for < -->
-            <button id="next-btn" class="nav-arrow">></button> <!-- Use > for > -->
+            <button id="prev-btn" class="nav-arrow"><</button>
+            <button id="next-btn" class="nav-arrow">></button>
         </div>
     </div>
 
-    <!-- *** CORRECTED: SINGLE 3D Showroom Container *** -->
-    <div id="showroom-container">
+    <!-- 3D Showroom Container -->
+    <div id="showroom-container" style="display: none;">
         <!-- Canvas will be added here by Three.js -->
-        <div id="blocker">
-            <div id="instructions">
-                Click to Explore<br>(WASD to move, Mouse to look)
-                <!-- Back button will be added here by JS -->
-            </div>
-            <!-- Back button goes inside blocker -->
-        </div>
+        <!-- NEW: Permanent Back Button (Placed inside showroom container) -->
+        <button id="permanent-back-button" style="display: none;">Back to Menu</button>
+
+        <!-- Model Selection Sidebar (Placed inside showroom container) -->
         <div id="model-sidebar" style="display: none;">
-            <!-- Initially hidden -->
             <h4>Select Model</h4>
             <ul id="model-list">
-                <!-- List items will be populated by JS -->
-                <!-- Example Structure (Generated by JS):
-            <li><button data-model-url="models/bathrobe_blue.glb">Blue Robe</button></li>
-            <li><button data-model-url="models/bathrobe_fancy.glb" class="active-model">Fancy Robe</button></li>
-            -->
+                <!-- List items populated by JS -->
             </ul>
         </div>
-    </div>
-    <!-- *** End Corrected Container *** -->
+
+        <!-- REMOVED: #blocker and #instructions divs are no longer used -->
+
+    </div> <!-- End showroom-container -->
     <!-- Scripts -->
     <!-- THREE.js Core -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-    <!-- Pointer Lock Controls -->
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- GLTF Loader -->
     <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
