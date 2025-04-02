@@ -237,7 +237,7 @@ function initShowroom() {
 
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100); // Adjusted far plane
-    camera.position.set(0, 1.6, 5); // Standard eye-level and distance
+    camera.position.set(0, eyeLevel, 5); // Standard eye-level and distance
 
 
     // Renderer
@@ -413,7 +413,7 @@ function animateShowroom() {
         direction.x = Number(moveRight) - Number(moveLeft);
         if (direction.lengthSq() > 0) direction.normalize();
 
-        const speed = 5.0; // Adjusted speed (was 35.0, maybe too fast?)
+        const speed = 35.0; // Adjusted speed (was 35.0, maybe too fast?)
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
@@ -422,7 +422,7 @@ function animateShowroom() {
         controls.moveForward(-velocity.z * delta);
 
         // Floor constraint - Check if camera.position.y matches initShowroom setting
-        const eyeLevel = 1.6; // Match camera's initial Y position
+        const eyeLevel = 0.75; // Match camera's initial Y position
         if (controls.getObject().position.y < eyeLevel) {
             velocity.y = 0; // Prevent falling further
             controls.getObject().position.y = eyeLevel; // Reset to eye level
