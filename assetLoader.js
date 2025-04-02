@@ -238,4 +238,4 @@ function applyConfigToModel(model, config) {
 
 
 // Export necessary functions and data
-export { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig };
+export { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig }; // Ensure showroomAssetConfig is here!
