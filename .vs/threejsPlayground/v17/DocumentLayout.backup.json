@@ -34,7 +34,8 @@
               "RelativeToolTip": "showroom.js",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-04-02T09:39:39.955Z"
+              "WhenOpened": "2025-04-02T09:39:39.955Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -44,7 +45,7 @@
               "RelativeDocumentMoniker": "index.html",
               "ToolTip": "C:\\Users\\burak\\Documents\\GitHub\\threejsPlayground\\index.html",
               "RelativeToolTip": "index.html",
-              "ViewState": "AgIAALIAAAAAAAAAAAAAALsAAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAALIAAAAAAAAAAAAAALkAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2025-04-02T09:39:28.412Z",
               "EditorCaption": ""
