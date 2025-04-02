@@ -5,9 +5,14 @@ const gltfLoader = new THREE.GLTFLoader();
 // Defines available models for each category
 const showroomAssetConfig = {
     towels: [
-        { name: 'Basic Towel Rack', url: 'models/hand_towel.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
-        { name: 'Towel Stack', url: 'models/hanging_towel.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false }, // Example static prop
+        { name: 'Test1', url: 'models/hand_towel.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+        { name: 'Test2', url: 'models/bathrobe.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+        { name: 'Test3', url: 'models/towels.glb', position: [1.5, 0, 0], scale: [1, 1, 1], swappable: true },
+
+       // { name: 'Towel Stack', url: 'models/hanging_towel.glb', position: [2.5, 0, 0.5], scale: [0.5, 0.5, 0.5], swappable: false }, // Example static prop
     ],
+
+    /*
     bathrobes: [
         { name: 'White Cotton Robe', url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4, swappable: true }, // Initial Swappable
         { name: 'Fancy Robe Stand', url: 'models/towels.glb', position: [-2.5, 0, 1], scale: [1, 1, 1], swappable: false }, // Example static prop
@@ -19,6 +24,7 @@ const showroomAssetConfig = {
         { name: 'Bath Mat', url: 'models/towels.glb', position: [0, 0.01, -0.5], scale: [1, 1, 1], swappable: false },
         { name: 'Lotion Dispenser', url: 'models/towels.glb', position: [0.5, 0.9, -1], scale: [0.2, 0.2, 0.2], swappable: true }, // Alternative Swappable (not loaded initially)
     ]
+    */
 };
 
 // --- State Variable ---
