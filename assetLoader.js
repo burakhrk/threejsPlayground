@@ -53,11 +53,11 @@ function loadAssets(sceneId, scene) {
             // Add more assets for 'towels' here
         ],
         bathrobes: [
-            { url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [0.6, 0.6, 0.6], rotationY: Math.PI / 4 }
+            { url: 'models/bathrobe.glb', position: [-1.5, 0.8, 1], scale: [1,1, 1], rotationY: Math.PI / 4 }
             // Add more assets for 'bathrobes' here
         ],
         accessories: [
-            { url: 'models/bathrobe.glb', position: [0, 0.9, -1], scale: [0.3, 0.3, 0.3], rotationY: 0 }
+            { url: 'models/bathrobe.glb', position: [0, 0.9, -1], scale: [1, 1, 1], rotationY: 0 }
             // Add more assets for 'accessories' here
         ]
     };
