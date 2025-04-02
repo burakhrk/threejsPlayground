@@ -2,7 +2,6 @@
 
 // --- Import Asset Loader ---
 // Ensure assetLoader.js exports these: loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig
-import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
 // --- Global Variables ---
 let camera, scene, renderer, controls;
@@ -207,6 +206,7 @@ function updateSidebarActiveState(activeModelUrl) {
 // --- 3D Showroom Initialization (BASE SETUP ONLY) ---
 function initShowroom() {
     console.log("initShowroom: Setting up BASE scene elements...");
+    import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
     const container = document.getElementById('showroom-container');
     const blocker = document.getElementById('blocker');
