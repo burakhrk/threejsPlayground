@@ -271,7 +271,7 @@ function initShowroom() {
 
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100); // Good defaults
-    camera.position.set(0, eyeLevel, 5); // Start at average eye height, 5 units back from origin
+    camera.position.set(0, 0.75, 5); // Start at average eye height, 5 units back from origin
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
