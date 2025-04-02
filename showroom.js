@@ -467,7 +467,7 @@ function animateShowroom() {
         controls.moveForward(-velocity.z * delta);// moveForward is correct for local Z axis
         // Apply vertical velocity if using gravity
         // controls.getObject().position.y += velocity.y * delta;
-
+         
         // Simple Floor Constraint (prevent falling through floor at y=0)
         const eyeLevel = 0.75; // Should match camera's initial Y position or desired height
         if (controls.getObject().position.y < eyeLevel) {
