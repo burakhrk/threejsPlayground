@@ -1,7 +1,8 @@
 // showroom.js
 
-// --- Import Asset Loader Functions ---
-import { loadAssets, clearAssets } from './assetLoader.js'; // Adjust path if needed
+// --- Import Asset Loader ---
+// Ensure assetLoader.js exports these: loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig
+import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
 // --- Global Variables ---
 let camera, scene, renderer, controls;
@@ -14,8 +15,9 @@ const direction = new THREE.Vector3();
 const clock = new THREE.Clock();
 let isShowroomInitialized = false; // Flag remains useful here
 let animationFrameId = null;
+let currentSceneId = null; // Track the active scene ID
 
-// --- DOM Element Selections (Keep as before) ---
+// --- DOM Element Selections ---
 console.log("Script start: Getting elements...");
 const carouselContainer = document.getElementById('carousel-container');
 const showroomContainer = document.getElementById('showroom-container');
@@ -23,7 +25,8 @@ const slider = document.getElementById('card-slider');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const enterButtons = document.querySelectorAll('.enter-button');
-// Add logging/checks for these elements if needed
+const modelSidebar = document.getElementById('model-sidebar'); // Sidebar div
+const modelList = document.getElementById('model-list');       // List within sidebar
 
 // --- Carousel Logic (Keep as before) ---
 const numCards = 3;
@@ -56,13 +59,14 @@ if (slider && prevBtn && nextBtn) {
     console.warn("Cannot initialize slider - elements missing.");
 }
 
-// --- Enter Button Logic (Updated to use AssetLoader) ---
+// --- Enter Button Logic (Updated for Sidebar & AssetLoader v2) ---
 if (enterButtons && enterButtons.length > 0) {
     console.log(`Found ${enterButtons.length} enter buttons. Attaching listeners...`);
     enterButtons.forEach((button, index) => {
         button.addEventListener('click', () => {
             const sceneId = button.getAttribute('data-scene-id');
             console.log(`Enter button #${index} CLICKED! Scene ID: ${sceneId}`);
+            currentSceneId = sceneId; // Store the current scene ID
 
             if (!carouselContainer || !showroomContainer) {
                 console.error("Core container elements missing. Aborting scene entry.");
@@ -92,27 +96,111 @@ if (enterButtons && enterButtons.length > 0) {
                     console.log("Showroom already initialized. Preparing for new assets.");
                 }
 
-                // --- Use AssetLoader ---
+                // --- Load Initial Assets and Populate Sidebar ---
                 if (scene) { // Ensure scene exists (should after init)
-                    console.log("Clearing previous assets...");
-                    clearAssets(scene); // Clear assets using the imported function
+                    console.log("Loading initial assets for scene:", sceneId);
+                    loadInitialAssets(sceneId, scene); // USE NEW FUNCTION from assetLoader
 
-                    console.log("Loading new assets for scene:", sceneId);
-                    loadAssets(sceneId, scene); // Load new assets using the imported function
+                    console.log("Populating sidebar for scene:", sceneId);
+                    populateSidebar(sceneId); // Populate the sidebar
                 } else {
-                    console.error("Scene object not available, cannot clear/load assets!");
+                    console.error("Scene object not available, cannot load assets or populate sidebar!");
                 }
-                // --- End AssetLoader Usage ---
-
-                // Optional: Reset camera, controls state if needed for the new scene
-                // resetCameraForScene(sceneId);
-                // if (controls && !controls.isLocked) controls.lock(); // Or prompt lock again?
+                // --- End AssetLoader & Sidebar Usage ---
 
             }, 500); // Match CSS transition time
         });
     });
 } else {
     console.error("Could not find any 'enter-button' elements.");
+}
+
+
+// --- NEW: Sidebar Functions ---
+
+/** Populates the sidebar list based on the current sceneId */
+function populateSidebar(sceneId) {
+    if (!modelList || !showroomAssetConfig || !modelSidebar) {
+        console.error("Sidebar elements or config missing.");
+        return;
+    }
+
+    modelList.innerHTML = ''; // Clear previous items
+
+    const categoryConfig = showroomAssetConfig[sceneId];
+    if (!categoryConfig) {
+        console.warn(`Sidebar: No config found for scene ${sceneId}`);
+        modelSidebar.style.display = 'none'; // Hide sidebar if no config
+        return;
+    }
+
+    const swappableItems = categoryConfig.filter(item => item.swappable); // Get only swappable items
+
+    if (swappableItems.length <= 1) { // Hide if 0 or 1 swappable items
+        console.log(`Sidebar: ${swappableItems.length} swappable items for scene ${sceneId}. Hiding sidebar.`);
+        modelSidebar.style.display = 'none';
+        return; // No need for a choice
+    }
+
+    // Find the initially loaded swappable model's URL (assume it's the first swappable in config)
+    const initialSwappableUrl = swappableItems.length > 0 ? swappableItems[0].url : null;
+
+    swappableItems.forEach(itemConfig => {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.textContent = itemConfig.name;
+        button.dataset.modelUrl = itemConfig.url; // Store URL for click handler
+
+        // Add 'active-model' class if this is the initially loaded one
+        if (itemConfig.url === initialSwappableUrl) {
+            button.classList.add('active-model');
+        }
+
+        button.addEventListener('click', handleSidebarClick);
+
+        li.appendChild(button);
+        modelList.appendChild(li);
+    });
+
+    modelSidebar.style.display = 'flex'; // Show the sidebar
+}
+
+/** Handles clicks on sidebar item buttons */
+function handleSidebarClick(event) {
+    const button = event.currentTarget;
+    const modelUrl = button.dataset.modelUrl;
+
+    if (!modelUrl || !currentSceneId || !scene) {
+        console.error("Missing data for sidebar click handler:", { modelUrl, currentSceneId, sceneExists: !!scene });
+        return;
+    }
+
+    // Check if already active to prevent unnecessary swaps
+    if (button.classList.contains('active-model')) {
+        console.log("Sidebar click: Model already active.");
+        return;
+    }
+
+    console.log(`Sidebar click: Requesting swap to ${modelUrl} in scene ${currentSceneId}`);
+
+    // Visually update the sidebar immediately (optimistic update)
+    updateSidebarActiveState(modelUrl);
+
+    // Call the swap function from the asset loader
+    swapModel(modelUrl, currentSceneId, scene); // Use swapModel from assetLoader
+}
+
+/** Updates which button in the sidebar has the 'active-model' class */
+function updateSidebarActiveState(activeModelUrl) {
+    if (!modelList) return;
+    const buttons = modelList.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.dataset.modelUrl === activeModelUrl) {
+            btn.classList.add('active-model');
+        } else {
+            btn.classList.remove('active-model');
+        }
+    });
 }
 
 
@@ -135,7 +223,7 @@ function initShowroom() {
 
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 0.7;
+    camera.position.y = 1; // Resetting to standard eye-level based on previous context
     camera.position.z = 5;
 
     // Renderer
@@ -156,13 +244,13 @@ function initShowroom() {
     directionalLight.shadow.mapSize.width = 1024;
     directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
-    scene.add(directionalLight.target); // Good practice
+    scene.add(directionalLight.target);
 
     // Controls
     controls = new THREE.PointerLockControls(camera, document.body);
 
-    // --- Lock/Unlock/Back Button Logic (Updated to use AssetLoader) ---
-    blocker.style.display = 'flex'; // Start with blocker visible
+    // --- Lock/Unlock/Back Button Logic (Updated for Sidebar & AssetLoader v2) ---
+    blocker.style.display = 'flex';
     instructions.style.display = '';
 
     function removeBackButton() {
@@ -177,12 +265,14 @@ function initShowroom() {
         instructions.style.display = 'none';
         blocker.style.display = 'none';
         removeBackButton();
+        if (modelSidebar) modelSidebar.style.display = 'flex'; // Show sidebar when locked
     });
 
     controls.addEventListener('unlock', () => {
         console.log("Controls Unlocked.");
         blocker.style.display = 'flex';
         instructions.style.display = '';
+        if (modelSidebar) modelSidebar.style.display = 'none'; // Hide sidebar when unlocked (menu showing)
 
         removeBackButton(); // Ensure no duplicates
         const backButton = document.createElement('button');
@@ -195,12 +285,15 @@ function initShowroom() {
             if (showroomContainer) showroomContainer.style.display = 'none';
             if (carouselContainer) carouselContainer.classList.remove('hidden');
 
-            // --- Use AssetLoader on Back ---
+            // --- Use AssetLoader on Back & Clear Sidebar ---
             if (scene) {
-                console.log("Clearing assets before returning to menu...");
-                clearAssets(scene); // Clear assets using the imported function
+                console.log("Clearing all assets before returning to menu...");
+                clearAllAssets(scene); // USE clearAllAssets from assetLoader
             }
-            // --- End AssetLoader Usage ---
+            if (modelSidebar) modelSidebar.style.display = 'none'; // Explicitly hide sidebar
+            if (modelList) modelList.innerHTML = ''; // Clear list content
+            currentSceneId = null; // Reset scene ID tracker
+            // --- End Cleanup ---
 
             removeBackButton(); // Remove the button itself
         });
@@ -242,7 +335,7 @@ function initShowroom() {
     window.addEventListener('resize', onWindowResize);
 
     // Start Animation Loop
-    animateShowroom(); // Ensure this is defined and working
+    animateShowroom();
 
     console.log("initShowroom: Base setup complete.");
 }
@@ -271,17 +364,18 @@ function animateShowroom() {
         direction.x = Number(moveRight) - Number(moveLeft);
         if (direction.lengthSq() > 0) direction.normalize();
 
-        const speed = 35.0;
+        const speed = 35.0; // Resetting speed to 20 based on previous context
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
         if (controls.moveRight) controls.moveRight(-velocity.x * delta);
         if (controls.moveForward) controls.moveForward(-velocity.z * delta);
 
+        // Floor constraint might need adjustment if camera Y changed significantly
         const camObject = controls.getObject ? controls.getObject() : null;
-        if (camObject && camObject.position.y < 1.6) {
+        if (camObject && camObject.position.y < 1) { // Using 1.6 for constraint
             velocity.y = 0;
-            camObject.position.y = 1.6;
+            camObject.position.y = 1;
         }
     }
 
@@ -292,4 +386,4 @@ function animateShowroom() {
 }
 
 // --- Initial Script Load Message ---
-console.log("Showroom script (Module) loaded. Waiting for interaction.");   
+console.log("Showroom script (Module) loaded. Waiting for interaction.");

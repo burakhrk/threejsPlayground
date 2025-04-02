@@ -5,6 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textile Showroom - Select</title>
     <style>
+        #model-sidebar {
+            position: fixed; /* Position relative to the viewport */
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%); /* Center vertically */
+            width: 180px; /* Adjust width as needed */
+            max-height: 60%; /* Limit height */
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            z-index: 20; /* Above canvas, potentially above blocker if needed */
+            overflow-y: auto; /* Add scroll if list is long */
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column; /* Stack title and list */
+        }
+
+            #model-sidebar h4 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #333;
+                text-align: center;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 8px;
+            }
+
+        #model-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1; /* Allow list to take remaining space */
+            overflow-y: auto; /* Ensure list itself scrolls if needed */
+        }
+
+            #model-list li {
+                margin-bottom: 8px;
+            }
+
+            #model-list button {
+                /* Basic button reset */
+                background: none;
+                border: 1px solid #ccc;
+                padding: 8px 10px;
+                width: 100%;
+                text-align: left;
+                cursor: pointer;
+                border-radius: 5px;
+                font-size: 0.9em;
+                color: #444;
+                transition: background-color 0.2s ease, border-color 0.2s ease;
+                display: block; /* Ensure it takes full width */
+            }
+
+                #model-list button:hover {
+                    background-color: #eee;
+                    border-color: #aaa;
+                }
+
+                #model-list button:active {
+                    background-color: #ddd;
+                }
+
+                /* Style for the currently active model in the list */
+                #model-list button.active-model {
+                    background-color: #007bff;
+                    color: white;
+                    border-color: #0056b3;
+                    font-weight: bold;
+                }
+
+
         body {
             margin: 0;
             overflow: hidden; /* Prevent body scrollbars */
@@ -259,6 +330,30 @@
 
     <!-- 3D Showroom Container (Initially Hidden) -->
     <div id="showroom-container">
+
+        <div id="showroom-container">
+            <!-- Canvas will be added here by Three.js -->
+            <div id="blocker">
+                <!-- Blocker now inside showroom container -->
+                <div id="instructions">
+                    Click to Explore<br>(WASD to move, Mouse to look)
+                    <!-- Back button will be added here by JS -->
+                </div>
+                <!-- Back button goes inside blocker -->
+            </div>
+
+            <!-- NEW: Model Selection Sidebar -->
+            <div id="model-sidebar" style="display: none;">
+                <!-- Initially hidden -->
+                <h4>Select Model</h4>
+                <ul id="model-list">
+                    <!-- List items will be populated by JS -->
+                    <!-- Example: <li><button data-model-url="models/bathrobe_blue.glb">Blue Robe</button></li> -->
+                </ul>
+            </div>
+
+        </div> <!-- End showroom-container -->
+
         <!-- Canvas will be added here by Three.js -->
         <div id="blocker">
             <!-- Blocker now inside showroom container -->
