@@ -159,8 +159,8 @@ function initShowroom() {
 
     // Scene, Camera, Renderer, Lighting, Floor (Setup remains the same)
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xdddddd);
-    scene.fog = new THREE.Fog(0xdddddd, 15, 70); // Adjusted fog slightly
+    scene.background = new THREE.Color(0xe8eef2);
+    scene.fog = new THREE.Fog(0xe8eef2, 15, 70); // Adjusted fog slightly
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 1.6, 7); // Start position
@@ -173,7 +173,7 @@ function initShowroom() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight(0xeeeeff, 0.5); scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
     directionalLight.position.set(5, 10, 7.5); directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 1024; directionalLight.shadow.mapSize.height = 1024;
