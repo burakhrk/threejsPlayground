@@ -332,7 +332,7 @@ function animateShowroom() {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
     }
+    console.log("Showroom script loaded. OrbitControls, Smoother WASDQE Flying, Spacebar Stop. Waiting for interaction.");
 }
 
-// --- Initial Script Load Message ---
-console.log("Showroom script loaded. OrbitControls, Smoother WASDQE Flying, Spacebar Stop. Waiting for interaction.");
+ 
