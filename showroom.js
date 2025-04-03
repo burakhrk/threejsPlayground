@@ -1,18 +1,21 @@
 // --- Import Asset Loader ---
+import * as THREE from 'three'; // Assuming you're using modules and have THREE installed
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Make sure path is correct
 import { loadInitialAssets, clearAllAssets, swapModel, showroomAssetConfig } from './assetLoader.js';
 
 // --- Global Variables ---
 let camera, scene, renderer, controls; // controls is OrbitControls
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+let moveUp = false, moveDown = false; // <<< ADDED for Q/E
 const clock = new THREE.Clock();
 let isShowroomInitialized = false;
 let animationFrameId = null;
 let currentSceneId = null;
 
-// --- Movement Variables (Smoother Panning) ---
-const panVelocity = new THREE.Vector3(); // Current panning speed vector
-const PAN_ACCELERATION = 15.0;           // Units per second^2 - How fast panning speeds up
-const PAN_DAMPING_FACTOR = 0.90;         // Multiplier per second - lower values stop faster (e.g., 0.8 stops faster than 0.95)
+// --- Movement Variables (Smoother Panning/Flying) ---
+const panVelocity = new THREE.Vector3(); // Current movement speed vector (XYZ)
+const PAN_ACCELERATION = 15.0;           // Units per second^2 - How fast movement speeds up
+const PAN_DAMPING_FACTOR = 0.90;         // Multiplier per second - lower values stop faster
 const MIN_PAN_SPEED = 0.01;              // Speed below which velocity is zeroed out
 
 // --- DOM Element Selections ---
@@ -59,12 +62,13 @@ if (permanentBackButton) {
         if (modelSidebar) modelSidebar.style.display = 'none';
         if (modelList) modelList.innerHTML = '';
         currentSceneId = null;
-        moveForward = moveBackward = moveLeft = moveRight = false; // Reset keys
-        panVelocity.set(0, 0, 0); // Reset movement velocity
+        // Reset movement keys and velocity
+        moveForward = moveBackward = moveLeft = moveRight = moveUp = moveDown = false;
+        panVelocity.set(0, 0, 0);
     });
 } else { console.error("Permanent back button not found!"); }
 
-// --- Enter Button Logic --- (MODIFIED: Passes camera/controls to loadInitialAssets)
+// --- Enter Button Logic ---
 if (enterButtons && enterButtons.length > 0) {
     enterButtons.forEach((button, index) => {
         button.addEventListener('click', () => {
@@ -92,20 +96,17 @@ if (enterButtons && enterButtons.length > 0) {
                 } else {
                     console.log("Showroom already initialized.");
                     onWindowResize(); // Ensure size is correct
-                    // --- REMOVED redundant camera reset ---
-                    // The camera/target is now set by loadInitialAssets
                 }
 
-                // *** ENSURE scene, camera, controls are ready BEFORE loading assets ***
+                // Ensure scene, camera, controls are ready BEFORE loading assets
                 if (scene && camera && controls) {
                     console.log("Loading assets for:", sceneId);
-                    // *** MODIFIED CALL: Pass camera and controls ***
+                    // Pass camera and controls to potentially set initial positions/targets
                     loadInitialAssets(sceneId, scene, camera, controls);
                     console.log("Populating sidebar for:", sceneId);
                     populateSidebar(sceneId);
                 } else {
                     console.error("Scene, Camera, or Controls object not available before loading assets!");
-                    // Consider showing an error to the user or returning to menu
                     if (permanentBackButton) permanentBackButton.click(); // Go back if essentials are missing
                     return;
                 }
@@ -119,7 +120,7 @@ if (enterButtons && enterButtons.length > 0) {
     });
 } else { console.error("Could not find any '.enter-button' elements with 'data-scene-id'."); }
 
-// --- Sidebar Functions --- (No changes needed here)
+// --- Sidebar Functions ---
 function populateSidebar(sceneId) {
     console.log(`--- Populating sidebar for scene: ${sceneId} ---`);
     if (!modelList || !showroomAssetConfig || !modelSidebar) { console.error("Sidebar elements/config missing."); if (modelSidebar) modelSidebar.style.display = 'none'; return; }
@@ -161,20 +162,19 @@ function updateSidebarActiveState(activeModelUrl) {
     console.log(`Sidebar active state updated.`);
 }
 
-// --- 3D Showroom Initialization (MODIFIED: Adds Spacebar listener) ---
+// --- 3D Showroom Initialization (MODIFIED: Adds Q/E Key Listeners) ---
 function initShowroom() {
     console.log("initShowroom: Setting up BASE scene with OrbitControls...");
     const container = document.getElementById('showroom-container');
     if (!container) throw new Error("#showroom-container missing!");
 
-    // Scene, Camera, Renderer, Lighting, Floor (Setup remains the same)
+    // --- Scene, Camera, Renderer, Lighting ---
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeeeeee);
     scene.fog = new THREE.Fog(0xeeeeee, 15, 70);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    // Default start position - will be overridden by loadInitialAssets
-    camera.position.set(0, 1.6, 7);
+    camera.position.set(0, 1.6, 7); // Default start - overridden by loadInitialAssets
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -193,62 +193,58 @@ function initShowroom() {
     directionalLight.shadow.camera.top = 15; directionalLight.shadow.camera.bottom = -15;
     scene.add(directionalLight);
 
-    // Instantiate OrbitControls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // --- OrbitControls ---
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false; // Keep panning parallel to ground
+    controls.screenSpacePanning = false; // Pan parallel to ground plane
     controls.minDistance = 1; controls.maxDistance = 40;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent looking under floor
-    // Default target - will be overridden by loadInitialAssets
-    controls.target.set(0, 0.5, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent looking under floor initially
+    controls.target.set(0, 0.5, 0); // Default target - overridden by loadInitialAssets
     controls.update();
 
-    // --- MODIFIED Key Listeners ---
+    // --- Key Listeners (WASDQE + Space) ---
     const onKeyDown = (event) => {
-        // Only process keys if the showroom is visible and active
-        if (showroomContainer.style.display !== 'block' || !currentSceneId) return;
-
+        if (showroomContainer.style.display !== 'block' || !currentSceneId) return; // Only when active
         switch (event.code) {
             case 'ArrowUp': case 'KeyW': moveForward = true; break;
             case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
             case 'ArrowDown': case 'KeyS': moveBackward = true; break;
             case 'ArrowRight': case 'KeyD': moveRight = true; break;
-            // *** ADDED SPACEBAR CASE ***
+            case 'KeyQ': moveUp = true; break;       // <<< ADDED
+            case 'KeyE': moveDown = true; break;     // <<< ADDED
             case 'Space':
-                event.preventDefault(); // Important: Stop browser scroll/action on space
-                panVelocity.set(0, 0, 0); // Reset panning velocity immediately
+                event.preventDefault(); // Stop browser scroll/action
+                panVelocity.set(0, 0, 0); // Reset velocity immediately
                 console.log("Movement stopped via Spacebar.");
                 break;
         }
     };
     const onKeyUp = (event) => {
-        // Only process keys if the showroom is visible and active
-        if (showroomContainer.style.display !== 'block' || !currentSceneId) return;
-
+        if (showroomContainer.style.display !== 'block' || !currentSceneId) return; // Only when active
         switch (event.code) {
             case 'ArrowUp': case 'KeyW': moveForward = false; break;
             case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
             case 'ArrowDown': case 'KeyS': moveBackward = false; break;
             case 'ArrowRight': case 'KeyD': moveRight = false; break;
-            // No action needed for Space key up
+            case 'KeyQ': moveUp = false; break;       // <<< ADDED
+            case 'KeyE': moveDown = false; break;     // <<< ADDED
         }
     };
-    // Listen on the document level
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
-    // --- END MODIFIED Key Listeners ---
+    // --- End Key Listeners ---
 
-    // Floor (Setup remains the same)
+    // --- Floor ---
     const floorGeometry = new THREE.PlaneGeometry(60, 60);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8, metalness: 0.2 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 
     window.addEventListener('resize', onWindowResize);
-    console.log("initShowroom: Base setup complete.");
+    console.log("initShowroom: Base setup complete with WASDQE + Space controls.");
 }
 
-// --- Window Resize Handler --- (No changes needed)
+// --- Window Resize Handler ---
 function onWindowResize() {
     if (camera && renderer) {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -257,66 +253,86 @@ function onWindowResize() {
     }
 }
 
-// --- Animation Loop --- (No changes needed here)
-const forwardVector = new THREE.Vector3(); // Reusable vectors for direction calculation
-const sideVector = new THREE.Vector3();
-const worldUp = new THREE.Vector3(0, 1, 0);
-const panDelta = new THREE.Vector3(); // Calculated movement for this frame
+// --- Animation Loop (MODIFIED: Incorporates Q/E vertical movement) ---
+const forwardVector = new THREE.Vector3(); // Reusable vector for forward direction
+const sideVector = new THREE.Vector3();    // Reusable vector for side direction
+const worldUp = new THREE.Vector3(0, 1, 0); // Constant world up vector
+const panDelta = new THREE.Vector3();      // Calculated movement delta for this frame
 
 function animateShowroom() {
     animationFrameId = requestAnimationFrame(animateShowroom);
-    const delta = Math.min(clock.getDelta(), 0.1); // Get delta time, clamp
+    const delta = Math.min(clock.getDelta(), 0.1); // Get delta time, clamp max value
 
-    // --- Calculate Desired Movement Direction ---
-    let moveDirection = new THREE.Vector3(0, 0, 0);
-    if (camera && controls) { // Ensure camera exists
+    // --- Calculate Desired Movement Direction (Combined WASDQE) ---
+    let moveDirection = new THREE.Vector3(0, 0, 0); // Reset each frame
+
+    if (camera && controls) { // Ensure camera and controls are available
+        // --- Horizontal (WASD) based on camera's XZ direction ---
         camera.getWorldDirection(forwardVector);
-        forwardVector.y = 0; // Project onto XZ plane
+        forwardVector.y = 0; // Project onto the horizontal plane (XZ)
         forwardVector.normalize();
-        sideVector.crossVectors(worldUp, forwardVector).normalize(); // Get right vector
+        sideVector.crossVectors(worldUp, forwardVector).normalize(); // Calculate right vector (perpendicular to forward on XZ)
 
         if (moveForward) moveDirection.add(forwardVector);
         if (moveBackward) moveDirection.sub(forwardVector);
-        if (moveLeft) moveDirection.add(sideVector); // Use add for left (camera space)
-        if (moveRight) moveDirection.sub(sideVector); // Use sub for right (camera space)
+        if (moveLeft) moveDirection.add(sideVector);    // Add for left (negative cross product)
+        if (moveRight) moveDirection.sub(sideVector);   // Subtract for right (positive cross product)
 
-        moveDirection.normalize(); // Ensure consistent speed
+        // --- Vertical (QE) - directly affects the Y component ---
+        if (moveUp) moveDirection.y += 1;
+        if (moveDown) moveDirection.y -= 1;
+
+        // --- Normalize the final combined direction vector ---
+        // Only normalize if there's *any* movement input to avoid normalizing (0,0,0) -> NaN
+        if (moveDirection.lengthSq() > 0.0001) { // Use squared length for efficiency check
+            moveDirection.normalize(); // Ensures consistent speed regardless of direction(s) pressed
+        }
     }
 
-    // --- Apply Acceleration ---
-    if (moveDirection.lengthSq() > 0.1) { // If keys are pressed
+    // --- Apply Acceleration based on Input ---
+    // Add acceleration if any movement key is currently pressed
+    if (moveDirection.lengthSq() > 0.0001) {
         panVelocity.add(moveDirection.multiplyScalar(PAN_ACCELERATION * delta));
     }
 
-    // --- Apply Damping ---
-    const damping = Math.pow(PAN_DAMPING_FACTOR, delta); // Time-corrected damping
+    // --- Apply Damping (Deceleration) ---
+    // Apply damping always to slow down existing velocity, even if no keys are pressed
+    const damping = Math.pow(PAN_DAMPING_FACTOR, delta); // Time-corrected damping factor
     panVelocity.multiplyScalar(damping);
 
-    // --- Stop Movement if Velocity is Low ---
+    // --- Stop Movement if Velocity is Very Low ---
+    // Snap velocity to zero if it falls below a threshold to prevent tiny drifting
     if (panVelocity.lengthSq() < MIN_PAN_SPEED * MIN_PAN_SPEED) {
         panVelocity.set(0, 0, 0);
     }
 
-    // --- Apply Velocity to Camera/Target ---
-    if (panVelocity.lengthSq() > 0 && controls) {
-        panDelta.copy(panVelocity).multiplyScalar(delta); // Movement = velocity * time
+    // --- Apply Calculated Velocity to Camera and Target ---
+    // Only apply movement if there's significant velocity
+    if (panVelocity.lengthSq() > 0.00001 && controls) { // Use a very small threshold
+        panDelta.copy(panVelocity).multiplyScalar(delta); // Calculate position change: velocity * time
+
+        // Apply the delta to BOTH the camera's position and the OrbitControls target
+        // This results in a "fly" or "translate" movement (like Unity editor)
         controls.target.add(panDelta);
         camera.position.add(panDelta);
     }
 
     // --- Update OrbitControls ---
+    // Essential for applying mouse input, internal damping, and target changes
     if (controls) {
-        controls.update(); // Applies damping from controls internal state + mouse input
+        controls.update();
     }
 
-    // --- Render ---
+    // --- Render the Scene ---
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
     } else if (animationFrameId) {
-        console.error("Render components missing, stopping loop.");
-        cancelAnimationFrame(animationFrameId); animationFrameId = null;
+        // If rendering components are missing but the loop is running, stop it.
+        console.error("Render components missing, stopping animation loop.");
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
     }
 }
 
 // --- Initial Script Load Message ---
-console.log("Showroom script loaded. OrbitControls, Smoother WASD Panning, Spacebar Stop. Waiting for interaction.");
+console.log("Showroom script loaded. OrbitControls, Smoother WASDQE Flying, Spacebar Stop. Waiting for interaction.");
